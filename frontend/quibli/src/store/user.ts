@@ -25,10 +25,12 @@ export const useUserStore = create<UserStore>() (
       const { phone, password } = credentials;
       const res = await doLogin({ phone, password });
       console.log("Login.tsx: res:", res);
+      console.log("res.accessToken:", res.access_token);
+      console.log("res.refreshToken:", res.refresh_token);
       set({
         user: res.user,
-        accessToken: res.accessToken,
-        refreshToken: res.refreshToken,
+        accessToken: res.access_token,
+        refreshToken: res.refresh_token,
         isLogin: true,
       })
     }

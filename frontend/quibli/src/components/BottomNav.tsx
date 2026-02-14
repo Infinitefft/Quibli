@@ -124,7 +124,7 @@ export default function BottomNav() {
 
   const tabs = [
     { label: '首页', path: "/", Icon: HomeIcon },
-    { label: 'Qchat', path: "/chat", Icon: ChatIcon },
+    { label: 'Qlib', path: "/chat", Icon: ChatIcon },
     { label: '发布', path: "/publish", Icon: PublishIcon },
     { label: '关注', path: "/following", Icon: FollowingIcon },
     { label: '我的', path: "/mine", Icon: UserIcon }

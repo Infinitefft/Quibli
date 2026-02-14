@@ -198,7 +198,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           className="group flex items-center space-x-2 px-6 py-3 rounded-full text-sm font-medium text-gray-500 hover:text-black hover:bg-gray-50 transition-all"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          <span>返回首页</span>
+          <span>暂不登录，返回首页</span>
         </button>
       </div>
     </div>
