@@ -21,6 +21,7 @@
   - NestJS (nest new nest-test-demo)
   - Prisma ORM(pnpm i prisma@6.19.2, npx prisma init, npx prisma migrate dev --name add_posts)
   - PostgreSQL
+  - JWT
 - AI
 
 ---
@@ -128,3 +129,6 @@
   cache 缓存 home，界面和数据都保持
   display:none  离开文档流
   KeepAlive + AliveScope
+
+
+### 用户状态管理
