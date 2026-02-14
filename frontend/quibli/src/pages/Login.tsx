@@ -157,7 +157,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         <form onSubmit={handleLogin} className="w-full space-y-5">
           <div className="space-y-2">
             <Input
-              id="name"
+              id="phone"
               value={formData.phone}
               onChange={handleChange}
               placeholder="账号(手机号)"

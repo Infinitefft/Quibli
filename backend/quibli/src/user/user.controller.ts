@@ -12,9 +12,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService){}
 
   @Post('/register')
-  async register(@Body() registerDto: RegisterDto){
+  async register(@Body() registerDto: RegisterDto) {
     console.log(registerDto);
     return this.usersService.register(registerDto)
   }
-  
 }

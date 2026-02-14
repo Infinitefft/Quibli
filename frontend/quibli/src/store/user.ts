@@ -11,7 +11,7 @@ interface UserStore {
   user: User | null;
   isLogin: boolean;
   accessToken: string | null;
-  // refreshToken: string | null;
+  refreshToken: string | null;
   login: (credentials: Credential) => void;
 }
 
@@ -20,14 +20,14 @@ export const useUserStore = create<UserStore>() (
     user: null,
     isLogin: false,
     accessToken: null,
-    // refreshToken: null,
+    refreshToken: null,
     login: async (credentials) => {
       const { phone, password } = credentials;
       const res = await doLogin({ phone, password });
       set({
         user: res.user,
         accessToken: res.accessToken,
-        // refreshToken: res.refreshToken,
+        refreshToken: res.refreshToken,
         isLogin: true,
       })
     }
