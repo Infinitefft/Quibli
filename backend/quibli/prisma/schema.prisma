@@ -12,3 +12,227 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+
+
+// --------------------------------------
+// 1. 用户
+// --------------------------------------
+model User {
+  id        Int       @id @default(autoincrement())
+  // 手机号：11位，唯一，用于核心注册和登录
+  phone     String    @unique @db.VarChar(11) 
+  // 昵称：用于展示，可以重复（也可以设为 unique，看你需求）
+  nickname  String?   @db.VarChar(50)
+  // 用户ID/用户名：如果还需要保留一个唯一的字符串ID，可以用这个
+  password  String    @db.VarChar(255)
+  avatar    String?   @db.VarChar(255) // 简化一下，直接存 URL 字符串即可，也可以用单独的 Avatar 表
+
+  createAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  // --- 关系定义 ---
+  posts     Post[]
+  questions Question[] // 用户发布的问题
+  comments  Comment[]
+
+  // 点赞关联
+  likePosts     UserLikePost[]
+  likeQuestions UserLikeQuestion[]
+
+  // 收藏关联 (新增)
+  favoritePosts     UserFavoritePost[]
+  favoriteQuestions UserFavoriteQuestion[]
+  
+  // 关注系统
+  followedBy Follow[] @relation("following")
+  following  Follow[] @relation("follower")
+
+  @@map("users")
+}
+
+// 关注表：用户关注用户
+model Follow {
+  followerId  Int
+  followingId Int
+  createAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  follower    User      @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User      @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+// --------------------------------------
+// 2. 内容主体：文章 (Post) 与 问题 (Question)
+// --------------------------------------
+
+// 文章表：有标题，有正文
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String?  @db.Text // 文章有正文
+  userId    Int?
+  
+  createAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  comments  Comment[] // 文章下的评论
+  tags      PostTag[] // 文章的标签
+  
+  likes     UserLikePost[]
+  favorites UserFavoritePost[]
+
+  @@index([userId])
+  @@map("posts")
+}
+
+// 问题表：有标题，无正文 (更加简短)
+model Question {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  // content String?  <-- 按照你的要求，去掉了正文
+  userId    Int?
+
+  createAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  comments  Comment[] // 问题下的评论（其实也就是“回答”）
+  tags      QuestionTag[] // 问题的标签
+  
+  likes     UserLikeQuestion[]
+  favorites UserFavoriteQuestion[]
+
+  @@index([userId])
+  @@map("questions")
+}
+
+// --------------------------------------
+// 3. 共享模块：评论 (Comment) 与 标签 (Tag)
+// --------------------------------------
+
+// 评论表：既服务于文章，也服务于问题
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String?  @db.Text
+  userId    Int
+  
+  // 关联文章（可选）
+  postId    Int?
+  // 关联问题（可选）
+  questionId Int?
+  
+  // 父评论ID（用于回复）
+  parentId  Int?
+
+  createAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // 关系连接
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  question  Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  parent    Comment?  @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentToComment")
+
+  // 索引优化查询
+  @@index([postId])
+  @@index([questionId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// 标签表：共享的标签库
+model Tag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(255)
+
+  posts     PostTag[]
+  questions QuestionTag[]
+
+  @@map("tags")
+}
+
+// --------------------------------------
+// 4. 关联表 (Join Tables)
+// --------------------------------------
+
+// 文章-标签 关联
+model PostTag {
+  postId Int
+  tagId  Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+  @@map("post_tags")
+}
+
+// 问题-标签 关联 (复用 Tag 表)
+model QuestionTag {
+  questionId Int
+  tagId      Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+  @@index([tagId])
+  @@map("question_tags")
+}
+
+// 用户点赞文章
+model UserLikePost {
+  userId Int
+  postId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("user_like_posts")
+}
+
+// 用户点赞问题 (新增)
+model UserLikeQuestion {
+  userId     Int
+  questionId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@index([questionId])
+  @@map("user_like_questions")
+}
+
+// 用户收藏文章 (新增)
+model UserFavoritePost {
+  userId Int
+  postId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("user_favorite_posts")
+}
+
+// 用户收藏问题 (新增)
+model UserFavoriteQuestion {
+  userId     Int
+  questionId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@index([questionId])
+  @@map("user_favorite_questions")
+}
