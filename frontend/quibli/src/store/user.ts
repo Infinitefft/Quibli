@@ -24,6 +24,7 @@ export const useUserStore = create<UserStore>() (
     login: async (credentials) => {
       const { phone, password } = credentials;
       const res = await doLogin({ phone, password });
+      console.log("Login.tsx: res:", res);
       set({
         user: res.user,
         accessToken: res.accessToken,
@@ -37,7 +38,7 @@ export const useUserStore = create<UserStore>() (
     partialize: (state) => ({
       user: state.user,
       accessToken: state.accessToken,
-      // refreshToken: state.refreshToken,
+      refreshToken: state.refreshToken,
       isLogin: state.isLogin,
     })
   })

@@ -17,7 +17,7 @@ export const needsLoginPath = ['/mine', '/following', '/chat']
 
 function App() {
   const { isLogin } = useUserStore();
-  console.log("isLogin：", isLogin);
+  // console.log("isLogin：", isLogin);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
