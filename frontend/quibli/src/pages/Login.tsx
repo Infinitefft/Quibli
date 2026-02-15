@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import type { Credential } from '@/types/index';
+
 import {
   useNavigate
 } from 'react-router-dom';
 
 interface LoginProps {
   onLoginSuccess?: () => void;
+  // 可选回调函数，登录成功后调用
 }
 
 export default function Login({ onLoginSuccess }: LoginProps) {
@@ -42,9 +44,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     setLoading(true);
     try {
       await login({ phone, password })
-      if (onLoginSuccess) {
+      if (onLoginSuccess) {   // 如果父组件传了回调函数，那么登录成功后调用
         onLoginSuccess();
-      } else {
+      } else {   // 没传那么执行默认操作：跳转到首页
         navigate("/", { replace: true })
       }
     } catch (err) {
@@ -178,7 +180,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
           <Button
             className="w-full h-14 bg-black hover:bg-gray-800 text-white rounded-2xl text-base font-semibold transition-all duration-200 shadow-lg shadow-gray-300/50 hover:shadow-xl hover:shadow-gray-300/60 active:scale-[0.98] mt-2"
-            disabled={loading}
+            disabled={loading}   // disabled={loading} 防止重复点击
           >
             {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "登录"}
           </Button>

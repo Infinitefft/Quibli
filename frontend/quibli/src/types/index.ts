@@ -37,3 +37,7 @@ export interface Credential {
   phone: string;
   password: string;
 }
+
+export interface RegisterCredentil extends Credential {
+  nickname: string;
+}

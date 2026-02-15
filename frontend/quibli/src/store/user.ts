@@ -5,6 +5,9 @@ import { persist } from 'zustand/middleware';
 import type { User } from '@/types/index';
 import type { Credential } from '@/types/index';
 import { doLogin } from '@/api/user';
+import type { RegisterCredentil } from '@/types/index';
+import { doRegister } from '@/api/user';
+
 
 
 interface UserStore {
@@ -13,6 +16,7 @@ interface UserStore {
   accessToken: string | null;
   refreshToken: string | null;
   login: (credentials: Credential) => void;
+  register: (credentials: RegisterCredentil) => void;
 }
 
 export const useUserStore = create<UserStore>() (
@@ -24,16 +28,19 @@ export const useUserStore = create<UserStore>() (
     login: async (credentials) => {
       const { phone, password } = credentials;
       const res = await doLogin({ phone, password });
-      console.log("Login.tsx: res:", res);
-      console.log("res.accessToken:", res.access_token);
-      console.log("res.refreshToken:", res.refresh_token);
+      // console.log("Login.tsx: res:", res);
       set({
         user: res.user,
         accessToken: res.access_token,
         refreshToken: res.refresh_token,
         isLogin: true,
       })
-    }
+    },
+    register: async (credentials) => {
+      const { phone, nickname, password } = credentials;
+      const res = await doRegister({ phone, nickname, password });
+      console.log("Register.tsx: res:", res);
+    },
   }),
   {
     name: 'quibli-user-store',
