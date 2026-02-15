@@ -5,10 +5,14 @@ import {
 import { Input } from '@/components/ui/SearchInput';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
 import { Search, Bell } from 'lucide-react';
-import PostsItem from '@/pages/PostsItem'
-import useHomePostStore from '@/store/homePost';
 import InfiniteScroll from '@/components/InfiniteScroll';
+
+// import PostsItem from '@/pages/PostsItem'
+import useHomePostStore from '@/store/homePost';
+
+import useHomeQuestionStore from '@/store/homeQuestion';
 import QuestionsItem from '@/pages/QuestionsItem'
+
 
 
 
@@ -17,13 +21,14 @@ export default function Home() {
   const isHidden = scrollDirection === 'down' && !isAtTop;
   
 
-  const { loadingPosts, loadMorePosts, posts, hasMorePosts } = useHomePostStore();
+  // const { loadingPosts, loadMorePosts, posts, hasMorePosts } = useHomePostStore();
   
-  // const { loading, loadMore, questions, hasMore } = useHomeQuestionStore();
+  const { loadingQuestions, loadMoreQuestions, questions, hasMoreQuestions } = useHomeQuestionStore();
   
 
   useEffect(() => {
-    loadMorePosts();
+    // loadMorePosts();
+    loadMoreQuestions();
   }, []);
   return (
     <>
@@ -52,7 +57,7 @@ export default function Home() {
         </div>
       </header>
 
-      <InfiniteScroll
+      {/* <InfiniteScroll
         onLoadMore={loadMorePosts}
         hasMore={hasMorePosts}
         isLoading={loadingPosts}
@@ -64,22 +69,20 @@ export default function Home() {
             ))
           }
         </div>
-      </InfiniteScroll>
-      {/* <InfiniteScroll
-        onLoadMore={loadMore}
-        hasMore={hasMore}
-        isLoading={loading}
+      </InfiniteScroll> */}
+      <InfiniteScroll
+        onLoadMore={loadMoreQuestions}
+        hasMore={hasMoreQuestions}
+        isLoading={loadingQuestions}
       >
         <div>
           {
-            {
-              questions.map((question) => {
-                <QuestionsItem key={question.id} question={question} />
-              })
-            }
+            questions.map((question) => (
+              <QuestionsItem key={question.id} question={question} />
+            ))
           }
         </div>
-      </InfiniteScroll> */}
+      </InfiniteScroll>
 
     </>
   );
