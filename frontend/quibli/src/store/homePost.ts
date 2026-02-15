@@ -19,7 +19,7 @@ export const useHomePostStore = create<HomePostState>((set, get) => ({
   hasMore: true,
   posts: [],
   loadMore: async () => {
-    if (get().loading) return;
+    if (get().loading || !get().hasMore) return;
     set({loading: true});
     try {
       const { postItems } = await fetchPosts(get().page);
@@ -33,6 +33,7 @@ export const useHomePostStore = create<HomePostState>((set, get) => ({
         })
       }
     } catch (err) {
+      
       console.log("加载失败", err);
     } finally {
       set({ loading: false })

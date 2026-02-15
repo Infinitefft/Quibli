@@ -15,7 +15,7 @@ export default function Home() {
   const { scrollDirection, isAtTop } = useScrollDirection();
   const isHidden = scrollDirection === 'down' && !isAtTop;
   
-  const { loading, loadMore, posts, hasMore, page } = useHomePostStore();
+  const { loading, loadMore, posts, hasMore } = useHomePostStore();
 
   useEffect(() => {
     loadMore();
@@ -60,13 +60,7 @@ export default function Home() {
           }
         </div>
       </InfiniteScroll>
-      <div>
-        {
-          posts.map((post) => (
-            <PostsItem key={post.id} post={post} />
-          ))
-        }
-      </div>
+      
     </>
   );
 }
