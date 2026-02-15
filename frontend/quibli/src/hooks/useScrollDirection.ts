@@ -1,40 +1,37 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { throttle } from '@/utils/Throttle';
 
-export const useScrollDirection = (elementRef?: React.RefObject<HTMLElement>) => {
+export const useScrollDirection = () => {
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
   const [isAtTop, setIsAtTop] = useState(true);
   
   const lastScrollY = useRef(0);
-  const currentDirection = useRef<'up' | 'down' | null>(null);
 
-  useEffect(() => {
-    // 确定监听目标：如果有 ref 且 current 存在，则监听该元素，否则监听 window
-    const scrollTarget = elementRef?.current || window;
-
-    const updateScrollDir = throttle(() => {
-      // 获取滚动距离：根据监听目标不同，获取方式不同
-      const scrollY = elementRef?.current ? elementRef.current.scrollTop : window.scrollY;
+  // We define the throttled logic separately. 
+  // It receives the scroll position (number) instead of the event object.
+  // This is crucial because React reuses/nullifies event objects, so accessing properties
+  // like currentTarget.scrollTop asynchronously (inside throttle) fails.
+  const processScroll = useCallback(
+    throttle((currentScrollY: number) => {
+      const direction = currentScrollY > lastScrollY.current ? 'down' : 'up';
       
-      const direction = scrollY > lastScrollY.current ? 'down' : 'up';
-
-      const newIsAtTop = scrollY < 10;
+      const newIsAtTop = currentScrollY < 10;
       setIsAtTop(newIsAtTop);
-      
-      if (direction !== currentDirection.current) {
-        if (Math.abs(scrollY - lastScrollY.current) > 5) {
-          setScrollDirection(direction);
-          currentDirection.current = direction;
-          lastScrollY.current = scrollY > 0 ? scrollY : 0;
-        }
-      } else {
-        lastScrollY.current = scrollY > 0 ? scrollY : 0;
+
+      if (Math.abs(currentScrollY - lastScrollY.current) > 5) {
+        setScrollDirection(direction);
       }
-    }, 50);
 
-    scrollTarget.addEventListener('scroll', updateScrollDir as EventListener);
-    return () => scrollTarget.removeEventListener('scroll', updateScrollDir as EventListener);
-  }, [elementRef]); // 依赖 elementRef
+      lastScrollY.current = currentScrollY > 0 ? currentScrollY : 0;
+    }, 50),
+    []
+  );
 
-  return { scrollDirection, isAtTop };
+  // The event handler extracts scrollTop synchronously and passes it to the throttled function
+  const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    const currentScrollY = e.currentTarget.scrollTop;
+    processScroll(currentScrollY);
+  }, [processScroll]);
+
+  return { scrollDirection, isAtTop, handleScroll };
 };
