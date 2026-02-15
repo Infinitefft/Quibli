@@ -1,14 +1,25 @@
+import {
+  useEffect,
+} from 'react';
+
 import { Input } from '@/components/ui/SearchInput';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
 import { Search, Bell } from 'lucide-react';
+import PostsItem from '@/pages/PostsItem'
+import useHomePostStore from '@/store/homePost';
+import InfiniteScroll from '@/components/InfiniteScroll';
 
 
 
 export default function Home() {
   const { scrollDirection, isAtTop } = useScrollDirection();
   const isHidden = scrollDirection === 'down' && !isAtTop;
+  
+  const { loading, loadMore, posts, hasMore, page } = useHomePostStore();
 
-
+  useEffect(() => {
+    loadMore();
+  }, []);
   return (
     <>
 
@@ -36,75 +47,25 @@ export default function Home() {
         </div>
       </header>
 
-      
+      <InfiniteScroll
+        onLoadMore={loadMore}
+        hasMore={hasMore}
+        isLoading={loading}
+      >
+        <div>
+          {
+            posts.map((post) => (
+              <PostsItem key={post.id} post={post} />
+            ))
+          }
+        </div>
+      </InfiniteScroll>
       <div>
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
-        skjflkjwelkjflkjfklwjelfjslkdjflkawejklfjasklfjlsk
+        {
+          posts.map((post) => (
+            <PostsItem key={post.id} post={post} />
+          ))
+        }
       </div>
     </>
   );
