@@ -214,3 +214,10 @@ export class UsersService {
   }
 }
 ```
+
+
+### AI chat 流式输出
+> pnpm add @ai-sdk/react
+> pnpm add openai
+- 封装成hooks
+- 
