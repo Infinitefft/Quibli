@@ -8,6 +8,7 @@ import { Search, Bell } from 'lucide-react';
 import PostsItem from '@/pages/PostsItem'
 import useHomePostStore from '@/store/homePost';
 import InfiniteScroll from '@/components/InfiniteScroll';
+import QuestionsItem from '@/pages/QuestionsItem'
 
 
 
@@ -15,10 +16,14 @@ export default function Home() {
   const { scrollDirection, isAtTop } = useScrollDirection();
   const isHidden = scrollDirection === 'down' && !isAtTop;
   
-  const { loading, loadMore, posts, hasMore } = useHomePostStore();
+
+  const { loadingPosts, loadMorePosts, posts, hasMorePosts } = useHomePostStore();
+  
+  // const { loading, loadMore, questions, hasMore } = useHomeQuestionStore();
+  
 
   useEffect(() => {
-    loadMore();
+    loadMorePosts();
   }, []);
   return (
     <>
@@ -48,9 +53,9 @@ export default function Home() {
       </header>
 
       <InfiniteScroll
-        onLoadMore={loadMore}
-        hasMore={hasMore}
-        isLoading={loading}
+        onLoadMore={loadMorePosts}
+        hasMore={hasMorePosts}
+        isLoading={loadingPosts}
       >
         <div>
           {
@@ -60,7 +65,22 @@ export default function Home() {
           }
         </div>
       </InfiniteScroll>
-      
+      {/* <InfiniteScroll
+        onLoadMore={loadMore}
+        hasMore={hasMore}
+        isLoading={loading}
+      >
+        <div>
+          {
+            {
+              questions.map((question) => {
+                <QuestionsItem key={question.id} question={question} />
+              })
+            }
+          }
+        </div>
+      </InfiniteScroll> */}
+
     </>
   );
 }

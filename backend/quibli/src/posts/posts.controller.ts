@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { PostsService } from './posts.service'
-import { PostQueryDto } from './dto/post-query.dto'
+import { PostsQueryDto } from './dto/posts-query.dto'
 // auth 模块
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
@@ -21,8 +21,8 @@ export class PostsController {
   }
 
   @Get()
-  async getPosts(@Query() query: PostQueryDto) {
-    console.log(query)
+  async getPosts(@Query() query: PostsQueryDto) {
+    // console.log(query)
     return this.postsService.findAll(query);
   }
 
@@ -30,19 +30,19 @@ export class PostsController {
   // 发布文章的处理函数
   // restful
   // post 名词 post 
-  @Post()
-  @UseGuards(JwtAuthGuard)   // 路由守卫
-  createPost(
-    @Body("title") title: string,
-    @Body("content") content: string,
-    @Req() req
-  ) {
-    // console.log(req.user);
-    const { user } = req;
-    return this.postsService.createPost({
-      title,
-      content,
-      userId: req.user.id
-    })
-  }
+  // @Post()
+  // @UseGuards(JwtAuthGuard)   // 路由守卫
+  // createPost(
+  //   @Body("title") title: string,
+  //   @Body("content") content: string,
+  //   @Req() req
+  // ) {
+  //   // console.log(req.user);
+  //   const { user } = req;
+  //   return this.postsService.createPost({
+  //     title,
+  //     content,
+  //     userId: req.user.id
+  //   })
+  // }
 }

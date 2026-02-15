@@ -8,7 +8,7 @@ export interface User {
 export interface Post {
   id: number;
   title: string;  // 标题
-  brief: string;  // 简介
+  // brief: string;  // 简介
   publishedAt: string;  // 发布时间
   totalLikes?: number;   // 点赞数
   totalFavorites?: number;   // 收藏数

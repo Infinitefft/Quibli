@@ -1,6 +1,6 @@
 import axios from '@/api/config';
 
-export const fetchQuestions = async (page: number = 1, limit: number = 10) => {
+export const fetchQuestions = async (page: number = 1, limit: number = 12) => {
   try {
     const response = await axios.get('/questions', {
       params: {

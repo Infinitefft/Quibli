@@ -2,14 +2,14 @@ import axios from '@/api/config';
 
 export const fetchPosts = async (page: number = 1, limit: number = 10) => {
   try {
-    const response = await axios.get('/posts', {
+    const res = await axios.get('/posts', {
       params: {
-        page, 
+        page,
         limit
       }
     });
-    console.log(response);
-    return response;
+    console.log("fetchPosts的res:", res);
+    return res;
   } catch(err) {
     console.log(err);
     return null;

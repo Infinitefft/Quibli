@@ -7,7 +7,7 @@ import {
 import { Type } from 'class-transformer'
 
 // 为 transfer object 保驾护航
-export class PostQueryDto {
+export class PostsQueryDto {
   @IsOptional()   // 可选的
   @Type(() => Number)
   @IsInt()
