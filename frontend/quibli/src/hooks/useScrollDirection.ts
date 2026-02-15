@@ -1,32 +1,40 @@
-import { useState, useEffect } from 'react';
-import { throttle } from '@/utils/Throttle';   // 引入节流函数
+import { useState, useEffect, useRef } from 'react';
+import { throttle } from '@/utils/Throttle';
 
-export const useScrollDirection = () => {
+export const useScrollDirection = (elementRef?: React.RefObject<HTMLElement>) => {
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
   const [isAtTop, setIsAtTop] = useState(true);
+  
+  const lastScrollY = useRef(0);
+  const currentDirection = useRef<'up' | 'down' | null>(null);
 
   useEffect(() => {
-    let lastScrollY = window.scrollY;
+    // 确定监听目标：如果有 ref 且 current 存在，则监听该元素，否则监听 window
+    const scrollTarget = elementRef?.current || window;
 
-    // 包一层 throttle，100ms 执行一次
-    const updateScrollDirection = throttle(() => {   // 节流优化
-      const scrollY = window.scrollY;
-      const direction = scrollY > lastScrollY ? 'down' : 'up';
+    const updateScrollDir = throttle(() => {
+      // 获取滚动距离：根据监听目标不同，获取方式不同
+      const scrollY = elementRef?.current ? elementRef.current.scrollTop : window.scrollY;
+      
+      const direction = scrollY > lastScrollY.current ? 'down' : 'up';
 
-      // 阈值 5px，方向变化才更新
-      if (direction !== scrollDirection && Math.abs(scrollY - lastScrollY) > 5) {
-        setScrollDirection(direction);
+      const newIsAtTop = scrollY < 10;
+      setIsAtTop(newIsAtTop);
+      
+      if (direction !== currentDirection.current) {
+        if (Math.abs(scrollY - lastScrollY.current) > 5) {
+          setScrollDirection(direction);
+          currentDirection.current = direction;
+          lastScrollY.current = scrollY > 0 ? scrollY : 0;
+        }
+      } else {
+        lastScrollY.current = scrollY > 0 ? scrollY : 0;
       }
+    }, 50);
 
-      setIsAtTop(scrollY < 10);
-      lastScrollY = scrollY > 0 ? scrollY : 0;
-    }, 100);
-
-    window.addEventListener('scroll', updateScrollDirection);
-    return () => {
-      window.removeEventListener('scroll', updateScrollDirection);
-    };
-  }, [scrollDirection]);
+    scrollTarget.addEventListener('scroll', updateScrollDir as EventListener);
+    return () => scrollTarget.removeEventListener('scroll', updateScrollDir as EventListener);
+  }, [elementRef]); // 依赖 elementRef
 
   return { scrollDirection, isAtTop };
 };

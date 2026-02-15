@@ -8,7 +8,7 @@ export const fetchPosts = async (page: number = 1, limit: number = 10) => {
         limit
       }
     });
-    console.log("fetchPosts的res:", res);
+    // console.log("fetchPosts的res:", res);
     return res;
   } catch(err) {
     console.log(err);

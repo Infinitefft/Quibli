@@ -8,7 +8,7 @@ export const fetchQuestions = async (page: number = 1, limit: number = 12) => {
         limit
       }
     });
-    console.log(response);
+    // console.log(response);
     return response;
   } catch(err) {
     console.log(err);
