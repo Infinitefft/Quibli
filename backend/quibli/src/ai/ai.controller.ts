@@ -32,15 +32,19 @@ export class AIController {
     res.setHeader('Connection', 'keep-alive');
 
     try {
-      await this.aiService.chat(chatDto.messages, (token: string) => {
-        res.write(`0:${JSON.stringify(token)}\n`)
-      })
+      const stream = await this.aiService.Chat(chatDto);
+      
+      for await (const chunk of stream) {
+        const text = chunk.text();
+        res.write(`data: ${JSON.stringify({ token: text })}\n\n`);
+      }
+      
+      // await this.aiService.Chat(chatDto, (token: string) => {
+      // })
       res.end();
     } catch (err) {
       console.error(err)
       res.status(500).end();
     }
-  
   }
-
 }
