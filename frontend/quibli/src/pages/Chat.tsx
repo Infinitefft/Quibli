@@ -65,16 +65,18 @@ export default function Chat() {
 
         {/* 2. Main Chat Area */}
         {/* 
-            - Added 'touch-none' and 'overscroll-none' to completely disable scrolling interaction when empty.
-            - overflow-hidden: Visual clipping.
-            - touch-none: Disables touch scrolling gestures.
-            - overscroll-none: Prevents scroll chaining/rubber-banding.
+            - Removed 'scroll-smooth' from CSS to improve native touch momentum feel (JS hook handles auto-scroll animation).
+            - Added 'overscroll-y-contain' to prevent "double scroll" or boundary chaining effects at the bottom.
+            - Added 'touch-none' & 'overscroll-none' for empty state to lock it completely.
         */}
         <div 
           ref={scrollRef}
           className={`
-            flex-1 scroll-smooth relative pt-16 pb-36 no-scrollbar
-            ${messages.length === 0 ? 'overflow-hidden touch-none overscroll-none' : 'overflow-y-auto'}
+            flex-1 relative pt-16 pb-36 no-scrollbar
+            ${messages.length === 0 
+              ? 'overflow-hidden touch-none overscroll-none' 
+              : 'overflow-y-auto overscroll-y-contain'
+            }
           `}
           style={{
             background: 'linear-gradient(to bottom, #f8fafc, #eff6ff)' // slate-50 to blue-50
