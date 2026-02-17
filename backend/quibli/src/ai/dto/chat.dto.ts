@@ -1,14 +1,28 @@
-import { IsArray, IsString } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsNotEmpty,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class MessageDto {
+export class Message {
   @IsString()
-  role: 'user' | 'assistant';
+  @IsNotEmpty()
+  role: string;
 
   @IsString()
+  @IsNotEmpty()
   content: string;
 }
 
 export class ChatDto {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
   @IsArray()
-  messages: MessageDto[];
+  @ValidateNested({ each: true })
+  @Type(() => Message)
+  messages: Message[];
 }

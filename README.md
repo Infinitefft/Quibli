@@ -430,6 +430,8 @@ export class AuthService {
 
 
 ### AI chat 流式输出
-> pnpm add @google/genai zod zod-to-json-schema
-
-- 封装成hooks
+- 封装成 hooks ，将 bot 的响应式业务剥离
+- vercel ai-sdk/react (`pnpm i @ai-sdk/react@1.2.12`)
+  - Ai 前端应用，nextjs(react ssr框架)
+  - @ai sdk 封装了chatbot，快速开发 
+  - chatbot UI 、响应式和AI 业务剥离

@@ -4,7 +4,6 @@ import {
   Body,
   Res,
 } from '@nestjs/common';
-
 import type { Response } from 'express';
 import { ChatDto } from './dto/chat.dto';
 import { AIService } from './ai.service';
@@ -18,27 +17,17 @@ export class AIController {
     @Body() chatDto: ChatDto,
     @Res() res: Response,
   ) {
-    // SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
 
     try {
-      const stream = await this.aiService.streamChat(chatDto);
-      // 正常写 SSE
-    } catch (error) {
-      console.error('Gemini error:', error);
-      console.error('Gemini error message:', error?.message);
-      console.error('Gemini error stack:', error?.stack);
-
-      res.status(500).write(
-        `data: ${JSON.stringify({
-          error: error?.message || 'AI generation failed',
-        })}\n\n`,
-      );
+      await this.aiService.chat(chatDto.messages, (token) => {
+        res.write(token);
+      });
       res.end();
+    } catch (error) {
+      console.error(error);
+      res.status(500).end();
     }
-
-    res.end();
   }
 }
