@@ -1,27 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { ChatDto } from './dto/chat.dto';
 
 @Injectable()
 export class AIService {
-  private genAI: GoogleGenerativeAI;
+  private ai: GoogleGenAI;
 
   constructor() {
-    // Ensure you configure GEMINI_API_KEY in your environment variables
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+    // 强制走本地代理 7890
+    const proxyAgent = new HttpsProxyAgent('http://127.0.0.1:7890');
+
+    this.ai = new GoogleGenAI({
+      apiKey: process.env.GOOGLE_API_KEY!,
+      fetch: (url: any, options: any) => {
+        return fetch(url, {
+          ...options,
+          dispatcher: proxyAgent, // 关键：让 undici 走代理
+        });
+      },
+    });
   }
 
-  async Chat(dto: ChatDto) {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+  async streamChat(chatDto: ChatDto) {
+    const lastUserMessage =
+      chatDto.messages[chatDto.messages.length - 1]?.content ?? '';
 
-    const chat = model.startChat({
-      history: dto.history || [],
+    if (!lastUserMessage) {
+      throw new Error('Message content is empty');
+    }
+
+    // 直接返回流
+    const stream = await this.ai.models.generateContentStream({
+      model: 'gemini-2.5-flash',
+      contents: lastUserMessage,
     });
 
-    // sendMessageStream returns an object containing the stream
-    const result = await chat.sendMessageStream(dto.messages);
-    
-    // Return the stream iterable to be handled by the controller
-    return result.stream;
+    return stream;
   }
 }
