@@ -7,7 +7,6 @@ const PHRASES = [
   "思维漫游，即刻出发",
   "今天有哪些想留下的思绪？",
   "打破边界，重构想象",
-  "如果思维有形状，它现在是什么样？"
 ];
 
 export default function ChatGreetings() {

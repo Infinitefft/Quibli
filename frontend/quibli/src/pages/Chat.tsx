@@ -37,142 +37,161 @@ export default function Chat() {
   };
 
   return (
-    // Flex Column Container: Full viewport height (dvh for mobile)
-    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 font-sans overflow-hidden relative">
-      
-      {/* 1. Header: Sticky Top */}
-      <header className="flex-none h-16 px-4 flex items-center gap-3 bg-white/80 backdrop-blur-md border-b border-gray-100 z-30 sticky top-0">
-        <HeaderLogo />
-        <div className="flex flex-col justify-center h-full pt-1">
-          <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700 leading-none mb-0.5">
-            Qbli
-          </h1>
-          <p className="text-[10px] text-slate-400 font-medium tracking-wide">AI COMPANION</p>
-        </div>
-      </header>
+    <>
+      {/* Inject custom styles to hide scrollbar cross-browser */}
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+      `}</style>
 
-      {/* 2. Main Chat Area: Grow to fill available space */}
-      {/* Background gradient applied here to content area */}
-      <div 
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto scroll-smooth relative"
-        style={{
-          background: 'linear-gradient(to bottom, #f8fafc, #eff6ff)' // slate-50 to blue-50
-        }}
-      >
-        {messages.length === 0 ? (
-          // Empty State
-          <div className="min-h-full flex flex-col justify-center items-center p-6">
-             {/* Ambient Background Blobs */}
-             <div className="absolute top-[20%] right-[10%] w-72 h-72 bg-blue-100/40 rounded-full blur-3xl pointer-events-none mix-blend-multiply animate-pulse" />
-             <div className="absolute bottom-[30%] left-[10%] w-72 h-72 bg-indigo-100/40 rounded-full blur-3xl pointer-events-none mix-blend-multiply animate-pulse [animation-delay:2s]" />
-             
-             <div className="z-10 w-full transform -translate-y-12">
-               <ChatGreetings />
-             </div>
+      {/* Flex Column Container: Full viewport height */}
+      <div className="flex flex-col h-[100dvh] w-full bg-slate-50 font-sans overflow-hidden relative">
+        
+        {/* 1. Header: Fixed Top */}
+        <header className="fixed top-0 left-0 right-0 h-16 px-4 flex items-center gap-3 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
+          <HeaderLogo />
+          <div className="flex flex-col justify-center h-full pt-1">
+            <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700 leading-none mb-0.5">
+              Qlib
+            </h1>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wide">AI COMPANION</p>
           </div>
-        ) : (
-          // Message List
-          <div className="px-4 py-6 space-y-6">
-            {messages.map((msg, index) => {
-              const isUser = msg.role === 'user';
-              return (
-                <div 
-                  key={index} 
-                  className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
-                >
-                  <div className={`flex max-w-[85%] gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                    
-                    {/* Avatar */}
-                    <div className={`
-                      flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm mt-0.5
-                      ${isUser 
-                        ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white' 
-                        : 'bg-white text-indigo-600 border border-indigo-50 shadow-indigo-100/50'
-                      }
-                    `}>
-                      {isUser ? <User size={15} /> : <Bot size={15} />}
-                    </div>
+        </header>
 
-                    {/* Bubble */}
-                    <div 
-                      className={`
-                        px-5 py-3 text-[15px] leading-relaxed shadow-sm
+        {/* 2. Main Chat Area */}
+        {/* 
+            - Added 'touch-none' and 'overscroll-none' to completely disable scrolling interaction when empty.
+            - overflow-hidden: Visual clipping.
+            - touch-none: Disables touch scrolling gestures.
+            - overscroll-none: Prevents scroll chaining/rubber-banding.
+        */}
+        <div 
+          ref={scrollRef}
+          className={`
+            flex-1 scroll-smooth relative pt-16 pb-36 no-scrollbar
+            ${messages.length === 0 ? 'overflow-hidden touch-none overscroll-none' : 'overflow-y-auto'}
+          `}
+          style={{
+            background: 'linear-gradient(to bottom, #f8fafc, #eff6ff)' // slate-50 to blue-50
+          }}
+        >
+          {messages.length === 0 ? (
+            // Empty State
+            <div className="min-h-full flex flex-col justify-center items-center p-6">
+               {/* Ambient Background Blobs */}
+               <div className="absolute top-[20%] right-[10%] w-72 h-72 bg-blue-100/40 rounded-full blur-3xl pointer-events-none mix-blend-multiply animate-pulse" />
+               <div className="absolute bottom-[30%] left-[10%] w-72 h-72 bg-indigo-100/40 rounded-full blur-3xl pointer-events-none mix-blend-multiply animate-pulse [animation-delay:2s]" />
+               
+               <div className="z-10 w-full transform -translate-y-12">
+                 <ChatGreetings />
+               </div>
+            </div>
+          ) : (
+            // Message List
+            <div className="px-4 py-6 space-y-6">
+              {messages.map((msg, index) => {
+                const isUser = msg.role === 'user';
+                return (
+                  <div 
+                    key={index} 
+                    className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  >
+                    <div className={`flex max-w-[85%] gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                      
+                      {/* Avatar */}
+                      <div className={`
+                        flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm mt-0.5
                         ${isUser 
-                          ? 'bg-gradient-to-br from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-sm shadow-indigo-200' 
-                          : 'bg-white border border-gray-100 text-slate-700 rounded-2xl rounded-tl-sm shadow-gray-100'
+                          ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white' 
+                          : 'bg-white text-indigo-600 border border-indigo-50 shadow-indigo-100/50'
                         }
-                      `}
-                    >
-                      <p className="whitespace-pre-wrap break-words font-normal tracking-wide">{msg.content}</p>
+                      `}>
+                        {isUser ? <User size={15} /> : <Bot size={15} />}
+                      </div>
+
+                      {/* Bubble */}
+                      <div 
+                        className={`
+                          px-5 py-3 text-[15px] leading-relaxed shadow-sm
+                          ${isUser 
+                            ? 'bg-gradient-to-br from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-sm shadow-indigo-200' 
+                            : 'bg-white border border-gray-100 text-slate-700 rounded-2xl rounded-tl-sm shadow-gray-100'
+                          }
+                        `}
+                      >
+                        <p className="whitespace-pre-wrap break-words font-normal tracking-wide">{msg.content}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            {/* Loading Indicator */}
-            {isLoading && (
-              <div className="flex justify-start w-full animate-in fade-in duration-300">
-                <div className="flex gap-3 max-w-[85%]">
-                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-indigo-600 border border-indigo-50 flex items-center justify-center shadow-sm mt-0.5">
-                      <Sparkles size={14} className="animate-pulse" />
-                   </div>
-                   <div className="bg-white border border-gray-100 px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
-                     <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                     <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                     <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
-                   </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="h-2" />
-          </div>
-        )}
-      </div>
-
-      {/* 3. Footer Section (Input + Nav) */}
-      <div className="flex-none z-40 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
-        {/* Input Area */}
-        <div className="p-3 border-t border-gray-50 bg-white/80 backdrop-blur">
-          <div className="max-w-3xl mx-auto">
-            <form 
-              onSubmit={handleSubmit} 
-              className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-full border border-gray-200 focus-within:border-indigo-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-50 transition-all duration-300 shadow-sm"
-            >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="与 Qbli 对话..."
-                className="flex-1 bg-transparent border-none px-4 py-2.5 text-sm focus:outline-none text-slate-700 placeholder:text-slate-400 min-w-0"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className={`
-                  p-2.5 rounded-full flex-shrink-0 transition-all duration-200 shadow-sm
-                  ${!input.trim() || isLoading 
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-indigo-200'
-                  }
-                `}
-              >
-                <Send size={18} className={isLoading ? 'opacity-0' : 'opacity-100'} />
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              {/* Loading Indicator */}
+              {isLoading && (
+                <div className="flex justify-start w-full animate-in fade-in duration-300">
+                  <div className="flex gap-3 max-w-[85%]">
+                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-indigo-600 border border-indigo-50 flex items-center justify-center shadow-sm mt-0.5">
+                        <Sparkles size={14} className="animate-pulse" />
+                     </div>
+                     <div className="bg-white border border-gray-100 px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
+                       <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                       <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                       <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
+                     </div>
                   </div>
-                )}
-              </button>
-            </form>
+                </div>
+              )}
+              
+              <div className="h-2" />
+            </div>
+          )}
+        </div>
+
+        {/* 3. Input Area - Fixed Position */}
+        <div className="fixed bottom-[64px] left-0 right-0 z-40 bg-white/85 backdrop-blur-md border-t border-gray-100/50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
+          <div className="max-w-3xl mx-auto p-3">
+              <form 
+                onSubmit={handleSubmit} 
+                className="flex items-center gap-2 p-1.5 bg-slate-50/80 rounded-full border border-gray-200 focus-within:border-indigo-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-50 transition-all duration-300 shadow-sm"
+              >
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="与 Qlib 对话..."
+                  className="flex-1 bg-transparent border-none px-4 py-2.5 text-sm focus:outline-none text-slate-700 placeholder:text-slate-400 min-w-0"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !input.trim()}
+                  className={`
+                    p-2.5 rounded-full flex-shrink-0 transition-all duration-200 shadow-sm
+                    ${!input.trim() || isLoading 
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-indigo-200'
+                    }
+                  `}
+                >
+                  <Send size={18} className={isLoading ? 'opacity-0' : 'opacity-100'} />
+                  {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    </div>
+                  )}
+                </button>
+              </form>
           </div>
         </div>
-        {/* Bottom Navigation */}
+          
+        {/* Bottom Navigation (Fixed bottom-0) */}
         <BottomNav />
       </div>
-    </div>
+    </>
   );
 }
