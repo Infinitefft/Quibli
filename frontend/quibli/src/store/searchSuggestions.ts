@@ -7,7 +7,7 @@ interface SearchSuggestionsState {
   loading: boolean;
   suggestions: string[];
   history: string[];
-  search: (keyword: string) => Promise<void>;
+  searchSuggestions: (keyword: string) => Promise<void>;
   addHistory: (keyword: string) => void;
   clearHistory: () => void;
 }
@@ -18,7 +18,7 @@ export const useSearchSuggestionsStore = create<SearchSuggestionsState>()(
     loading: false,
     suggestions: [],
     history: [],
-    search: async (keyword: string) => {
+    searchSuggestions: async (keyword: string) => {
       if (!keyword.trim()) {   // 搜索框没东西
         set({ suggestions: []});  // 搜索建议列表清空
         return 
