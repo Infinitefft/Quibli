@@ -5,6 +5,7 @@ import { Message } from './dto/chat.dto';
 import { ChatDeepSeek } from '@langchain/deepseek'
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 
+
 interface Post {
   title: string;
   category: string;

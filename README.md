@@ -435,3 +435,12 @@ export class AuthService {
   - Ai 前端应用，nextjs(react ssr框架)
   - @ai sdk 封装了chatbot，快速开发 
   - chatbot UI 、响应式和AI 业务剥离 -->
+
+
+
+### AI 语义化搜索
+
+- 查看所有运行中的容器：`docker ps`
+- 查看所有容器（包括未运行的）：`docker ps -a`
+- 进入默认数据库：`docker exec -it pgvector-db psql -U postgres -d postgres`
+
