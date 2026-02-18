@@ -46,6 +46,8 @@ export const useSearchSuggestionsStore = create<SearchSuggestionsState>()(
       }
       const { history } = get();
       const exists = history.includes(trimedKeyword);
+
+      // 已经存在的话，就把它放到最前面
       let newHistory = exists ? [trimedKeyword, ...history.filter((val) => val !== trimedKeyword)]
        : [trimedKeyword, ...history];
       set({ history: newHistory });

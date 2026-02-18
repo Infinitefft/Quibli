@@ -25,7 +25,7 @@ export const useUserStore = create<UserStore>() (
     isLogin: false,
     accessToken: null,
     refreshToken: null,
-    login: async (credentials) => {
+    login: async (credentials) => { 
       const { phone, password } = credentials;
       const res = await doLogin({ phone, password });
       // console.log("Login.tsx: res:", res);

@@ -24,13 +24,15 @@ const Chat = lazy(() => import('@/pages/Chat'));
 const Publish = lazy(() => import('@/pages/Publish'));
 const Following = lazy(() => import('@/pages/Following'));
 const Register = lazy(() => import('@/pages/Register'));
+const Loading = lazy(() => import('@/components/Loading'));
+
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
   return (
     <Router>
       <AliveScope>
-        <Suspense>
+        <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/search" element={<Search />} />

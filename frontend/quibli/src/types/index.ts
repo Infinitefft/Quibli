@@ -5,6 +5,7 @@ export interface User {
   avatar?: string;
 }
 
+
 export interface Post {
   id: number;
   title: string;  // 标题
@@ -40,4 +41,18 @@ export interface Credential {
 
 export interface RegisterCredentil extends Credential {
   nickname: string;
+}
+
+
+// 用户信息
+export interface UserProfile {
+  user: User;
+  posts: Post[];
+  questions: Question[];
+  followers?: User[];       // 粉丝
+  following?: User[];       // 关注
+  likedPosts?: Post[];      // 点赞的文章
+  favoritedPosts?: Post[];  // 收藏的文章
+  likedQuestions?: Question[];    // 点赞的问题
+  favoritedQuestions?: Question[]; // 收藏的问题
 }

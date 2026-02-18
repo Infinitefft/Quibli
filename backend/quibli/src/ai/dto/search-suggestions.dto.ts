@@ -10,7 +10,7 @@ import {
 
 import { Type } from 'class-transformer';
 
-export class PostDto {
+export class SearchPostSuggestionsDto {
   @IsNumber()
   id: number;
 
@@ -27,7 +27,7 @@ export class PostDto {
   similarity?: number;
 }
 
-export class QuestionDto {
+export class SearchQuestionSuggestionsDto {
   @IsNumber()
   id: number;
 
@@ -46,11 +46,11 @@ export class QuestionDto {
 export class SearchResultDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => PostDto)
-  posts: PostDto[];
+  @Type(() => SearchPostSuggestionsDto)
+  posts: SearchPostSuggestionsDto[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => QuestionDto)
-  questions: QuestionDto[];
+  @Type(() => SearchQuestionSuggestionsDto)
+  questions: SearchQuestionSuggestionsDto[];
 }

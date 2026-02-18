@@ -12,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private prisma: PrismaService){
 
-  }
+  } 
 
   async register(registerDto: RegisterDto) {
     const { phone, password, nickname } = registerDto;
