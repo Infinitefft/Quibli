@@ -1,4 +1,5 @@
 import axios from '@/api/config';
+import type { Question } from '@/types/index';
 
 export const fetchQuestions = async (page: number = 1, limit: number = 12) => {
   try {
@@ -13,5 +14,16 @@ export const fetchQuestions = async (page: number = 1, limit: number = 12) => {
   } catch(err) {
     console.log(err);
     return null;
+  }
+}
+
+
+export const publishQuestions = async (data: Partial<Question>) => {
+  try {
+    const res = await axios.post('/questions/publish', data);
+    return res;
+  } catch(err) {
+    console.log(err);
+    return null; 
   }
 }

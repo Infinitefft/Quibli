@@ -708,35 +708,30 @@ export const usePublishStore = create<PublishState>()(
 
 ``` ts
 // --- 配置区 ---
-const TITLE_TOTAL_SCORE = 30; // 总权重分
-const MAX_TAG_COUNT = 5;
-const TAG_CN_LIMIT = 7;
-const TAG_EN_LIMIT = 16;
+// const TITLE_TOTAL_SCORE = 30; // 总权重分
+// const MAX_TAG_COUNT = 5;
+// const TAG_CN_LIMIT = 7;
+// const TAG_EN_LIMIT = 16;
 
-const tags = currentPost.tags || [];
 
-// --- 核心逻辑：计算字符串权重分 ---
-const calculateScore = (str: string) => {
+// 获取字符串的权重分 (中文2分，其他1分)
+export const getWeightScore = (str: string = ''): number => {
   let score = 0;
-  for (let i = 0; i < str.length; i++) {
-    // 匹配中文字符
-    if (/[\u4e00-\u9fa5]/.test(str[i])) {
-      score += 2;
-    } else {
-      score += 1;
-    }
+  for (const char of str) {
+    score += /[\u4e00-\u9fa5]/.test(char) ? 2 : 1;
   }
   return score;
 };
 
-// --- 核心逻辑：根据权重截断字符串 ---
-const truncateByScore = (str: string, maxScore: number) => {
+
+// 根据权重分限额截断字符串
+export const truncateByWeight = (str: string, limit: number): string => {
   let score = 0;
   let result = '';
-  for (let char of str) {
-    const charScore = /[\u4e00-\u9fa5]/.test(char) ? 2 : 1;
-    if (score + charScore <= maxScore) {
-      score += charScore;
+  for (const char of str) {
+    const charWeight = /[\u4e00-\u9fa5]/.test(char) ? 2 : 1;
+    if (score + charWeight <= limit) {
+      score += charWeight;
       result += char;
     } else {
       break;
@@ -745,3 +740,4 @@ const truncateByScore = (str: string, maxScore: number) => {
   return result;
 };
 ```
+
