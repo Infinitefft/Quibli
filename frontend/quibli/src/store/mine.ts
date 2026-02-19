@@ -1,20 +1,31 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { UserProfile } from '@/types';
+import type { MineProfile } from '@/types';
+
+interface MineStore {
+  mineProfile: MineProfile,
+}
 
 
-
-export const useMineStore = create<UserProfile>()(
+export const useMineStore = create<MineStore>()(
   persist(
     (set, get) => ({
-      user: {
-        id: 0,
-        phone: '',
-        nickname: '',
-        avatar: undefined,
+      mineProfile: {
+        user: {
+          id: 0,
+          phone: '',
+          nickname: '',
+          avatar: undefined,
+        },
+        posts: [],
+        questions: [],
+        followers: [],
+        following: [],
+        likedPosts: [],
+        favoritedPosts: [],
+        likedQuestions: [],
+        favoritedQuestions: [],
       },
-      posts: [],
-      questions: [],
     }),
     { 
       name: 'mine-store',

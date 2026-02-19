@@ -45,6 +45,17 @@ export default function Mine() {
     }
   }
 
+
+  // 退出登录并回到首页
+  const handleLogout = async () => {
+    navigate('/', { replace: true });
+    // 延迟微秒清理状态，或者在目标页面的 useEffect 里清理
+    // 这样 Mine 页面在卸载前，user 状态依然存在，不会触发守卫拦截
+    setTimeout(() => {
+      logout();
+    }, 100);
+  };
+
   // console.log(user, 'popopopoppop');
 
 
@@ -128,7 +139,7 @@ export default function Mine() {
           </div>
         </div>
         <Button variant="destructive" className="w-full mt-8 h-12 text-base font-semibold
-          shadow-md shadow-red-100" onClick={() => logout()}
+          shadow-md shadow-red-100" onClick={() => handleLogout()}
         >
           退出登录
         </Button>

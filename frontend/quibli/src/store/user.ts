@@ -17,6 +17,7 @@ interface UserStore {
   refreshToken: string | null;
   login: (credentials: Credential) => void;
   register: (credentials: RegisterCredentil) => void;
+  logout: () => void;
 }
 
 export const useUserStore = create<UserStore>() (
@@ -41,6 +42,14 @@ export const useUserStore = create<UserStore>() (
       const res = await doRegister({ phone, nickname, password });
       console.log("Register.tsx: res:", res);
     },
+    logout: () => {
+      set({
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        isLogin: false,
+      })
+    }
   }),
   {
     name: 'quibli-user-store',

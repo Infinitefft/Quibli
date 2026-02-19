@@ -81,6 +81,13 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
           </div>
         )
       }
+      {
+        !hasMore && !isLoading && (
+          <div className="text-center  text-sm text-muted-foreground">
+            已经到底啦~
+          </div>
+        )
+      }
     </>
   );
 }

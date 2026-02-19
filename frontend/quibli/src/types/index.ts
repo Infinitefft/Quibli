@@ -45,7 +45,7 @@ export interface RegisterCredentil extends Credential {
 
 
 // 用户信息
-export interface UserProfile {
+export interface MineProfile {
   user: User;
   posts: Post[];
   questions: Question[];
