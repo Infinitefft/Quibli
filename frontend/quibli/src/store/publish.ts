@@ -47,9 +47,22 @@ export const usePublishStore = create<PublishState>()(
         }
       })),
 
-      // 重置（发布成功后调用）
-      resetQuestion: () => set({ currentQuestion: {} }),
-      resetPost: () => set({ currentPost: {} }),
+      // 重置
+      // 必须给 tags 初始值 []
+      resetQuestion: () => set({ 
+        currentQuestion: { 
+          title: '', 
+          tags: [] 
+        } 
+      }),
+      
+      resetPost: () => set({ 
+        currentPost: { 
+          title: '', 
+          content: '', 
+          tags: [] 
+        } 
+      }),
     }),
     {
       name: 'publish-store',

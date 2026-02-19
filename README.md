@@ -549,3 +549,154 @@ export class AuthService {
 - 查看所有容器（包括未运行的）：`docker ps -a`
 - 进入默认数据库：`docker exec -it pgvector-db psql -U postgres -d postgres`
 
+
+### AI 生成头像功能
+- 使用通义万象生成
+``` ts
+async avatar(nickname: string) {
+    const prompt = `你是一位头像设计师，请你根据用户的姓名${nickname}，设计一个专业的头像，风格卡通、时尚且好看。`;
+    
+    try {
+      // 1. 提交绘图任务到通义万相
+      const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable'
+        },
+        body: JSON.stringify({
+          model: 'wanx-v1',
+          input: { prompt },
+          parameters: { 
+            n: 1, 
+            size: '1024*1024' 
+          }
+        })
+      });
+
+      const submitResult: any = await response.json();
+      const taskId = submitResult.output?.task_id;
+
+      if (!taskId) {
+        throw new Error(`Failed to submit task: ${submitResult.message || 'Unknown error'}`);
+      }
+
+      // 2. 带限制保护的轮询
+      const imgUrl = await this.pollTaskResult(taskId);
+      console.log(imgUrl);
+      return imgUrl;
+    } catch (error) {
+      console.error("生成头像失败", error);
+      throw error;
+    }
+  }
+
+  // 轮询检查任务状态
+  private async pollTaskResult(taskId: string): Promise<string> {
+    const checkUrl = `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`;
+    const headers = { 'Authorization': `Bearer ${process.env.DASHSCOPE_API_KEY}` };
+    
+    const MAX_ATTEMPTS = 30; // 最大尝试 30 次
+    const INTERVAL = 2000;  // 每次间隔 2 秒
+    let attempts = 0;
+
+    while (attempts < MAX_ATTEMPTS) {
+      attempts++;
+      
+      const res = await fetch(checkUrl, { headers });
+      const statusResult: any = await res.json();
+      
+      // 容错处理：如果接口报错但没拿到 output
+      if (!statusResult.output) {
+        throw new Error('Invalid response from DashScope API');
+      }
+
+      const status = statusResult.output.task_status;
+
+      if (status === 'SUCCEEDED') {
+        // 成功：返回第一张图片的 URL
+        return statusResult.output.results[0].url;
+      } 
+      
+      if (status === 'FAILED' || status === 'UNKNOWN') {
+        // 失败：抛出 API 返回的具体错误信息
+        throw new Error(`Image generation failed: ${statusResult.output.message || 'Internal error'}`);
+      }
+
+      // 还在处理中，等待后重试
+      await new Promise(resolve => setTimeout(resolve, INTERVAL));
+    }
+
+    // 超过 60 秒（30次 * 2秒）仍未完成，强制断开
+    throw new Error('Image generation timed out after 60 seconds');
+  }
+```
+
+
+
+
+### 发布文章功能
+- `zustand` 统一管理发布文章和问题
+- 学习到 `Partial<T>` : 把类型 T 中的所有属性都变成“可选的”（Optional）。
+``` ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { Question, Post } from '@/types/index';
+
+
+interface PublishState {
+  // Partial<T> 的作用是把类型 T 中的所有属性都变成“可选的”（Optional）。
+  // 在 TypeScript 的严格模式下，如果你创建一个对象，必须一次性填满所有必填字段，否则会报错。
+  // 但是 Question, Post 接口还有创建时间等属性，所以使用 Partial 就不会报错了
+  currentQuestion: Partial<Question>;
+  currentPost: Partial<Post>;
+  setQuestionData: (data: Partial<Question>) => void;
+  // 更新文章草稿
+  setPostData: (data: Partial<Post>) => void;
+  
+  // 重置方法（发布成功或清空时调用）
+  resetQuestion: () => void;
+  resetPost: () => void;
+}
+
+
+
+export const usePublishStore = create<PublishState>()(
+    persist((set, get) => ({
+      currentQuestion: {
+        title: '',
+        tags: [],
+      },
+      currentPost: {
+        title: '',
+        content: '',
+        tags: [],
+      },
+      // state: 永远是上一次更新完成后的最终结果
+      setQuestionData: (data: Partial<Question>) => set((state: PublishState) => ({
+        currentQuestion: { 
+          ...state.currentQuestion, 
+          ...data 
+        }
+      })),
+
+      // 更新文章草稿
+      setPostData: (data: Partial<Post>) => set((state: PublishState) => ({
+        currentPost: { 
+          ...state.currentPost, 
+          ...data 
+        }
+      })),
+
+      // 重置（发布成功后调用）
+      resetQuestion: () => set({ currentQuestion: {} }),
+      resetPost: () => set({ currentPost: {} }),
+    }),
+    {
+      name: 'publish-store',
+    }
+  )
+)
+```
+
