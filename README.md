@@ -636,7 +636,7 @@ async avatar(nickname: string) {
 
 
 
-### 发布文章功能
+### 发布功能
 - `zustand` 统一管理发布文章和问题
 - 学习到 `Partial<T>` : 把类型 T 中的所有属性都变成“可选的”（Optional）。
 ``` ts
@@ -700,3 +700,48 @@ export const usePublishStore = create<PublishState>()(
 )
 ```
 
+
+### 发布页面
+- store 可以实现用户在发布页面的草稿功能
+- 发布文章和问题时，都需要对用户输入的标题和标签进行限制
+- 使用权重计算，中文标签权重为2分，英文标签权重为1分
+
+``` ts
+// --- 配置区 ---
+const TITLE_TOTAL_SCORE = 30; // 总权重分
+const MAX_TAG_COUNT = 5;
+const TAG_CN_LIMIT = 7;
+const TAG_EN_LIMIT = 16;
+
+const tags = currentPost.tags || [];
+
+// --- 核心逻辑：计算字符串权重分 ---
+const calculateScore = (str: string) => {
+  let score = 0;
+  for (let i = 0; i < str.length; i++) {
+    // 匹配中文字符
+    if (/[\u4e00-\u9fa5]/.test(str[i])) {
+      score += 2;
+    } else {
+      score += 1;
+    }
+  }
+  return score;
+};
+
+// --- 核心逻辑：根据权重截断字符串 ---
+const truncateByScore = (str: string, maxScore: number) => {
+  let score = 0;
+  let result = '';
+  for (let char of str) {
+    const charScore = /[\u4e00-\u9fa5]/.test(char) ? 2 : 1;
+    if (score + charScore <= maxScore) {
+      score += charScore;
+      result += char;
+    } else {
+      break;
+    }
+  }
+  return result;
+};
+```

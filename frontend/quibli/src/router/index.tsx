@@ -26,7 +26,7 @@ const Following = lazy(() => import('@/pages/Following'));
 const Register = lazy(() => import('@/pages/Register'));
 const Loading = lazy(() => import('@/components/Loading'));
 const PublishQuestions = lazy(() => import('@/pages/Publish/PublishQuestions'));
-// const PublishPosts = lazy(() => import('@/pages/Publish/PublishPosts'));
+const PublishPosts = lazy(() => import('@/pages/Publish/PublishPosts'));
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -39,7 +39,7 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/search" element={<Search />} />
             <Route path="/register" element={<Register />} />
             <Route path="/publish/questions" element={<PublishQuestions />} />
-            {/* <Route path="/publish/posts" element={<PublishPosts />} /> */}
+            <Route path="/publish/posts" element={<PublishPosts />} />
 
             <Route path="/" element={<MainLayout />}>
               <Route path="" element={<Home />} />

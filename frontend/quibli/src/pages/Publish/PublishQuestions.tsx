@@ -1,7 +1,4 @@
-import { 
-  useState, 
-  useEffect
-} from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { usePublishStore } from '@/store/publish';
 import { Badge } from '@/components/ui/badge';
@@ -13,28 +10,79 @@ export default function PublishQuestions() {
   const setQuestionData = usePublishStore((state) => state.setQuestionData);
   
   const [tagInput, setTagInput] = useState('');
-  // 新增：用于显示超长提示的状态
-  const [showError, setShowError] = useState(false);
+  const [showTagError, setShowTagError] = useState(false);
+  const [showTitleError, setShowTitleError] = useState(false);
 
-  const MAX_CN_LENGTH = 7;
-  const MAX_EN_LENGTH = 16;
+  // --- 配置权重上限 ---
+  const TITLE_MIN_SCORE = 7;    // 新增：标题最小分值
+  const TITLE_SCORE_LIMIT = 46; // 标题最大总分
+  const TAG_SCORE_LIMIT = 14;   // 单个标签总分
   const MAX_TAG_COUNT = 5;
 
-  // 这里的技巧：在组件顶部先定义好安全的 tags 数组，下面就不用到处写 ?? [] 了
   const tags = currentQuestion.tags || [];
 
-  // --- 添加标签函数 ---
-  const handleAddTag = () => {
-    const trimmedTag = tagInput.trim();
-    // 校验：不能为空、不能重复、最多5个标签
-    if (trimmedTag && !tags.includes(trimmedTag) && tags.length < MAX_TAG_COUNT) {
-      setQuestionData({ tags: [...tags, trimmedTag] });
-      setTagInput(''); 
-      setShowError(false);
+  // --- 核心工具函数：权重计算 ---
+  const getWeightScore = (str: string) => {
+    let score = 0;
+    for (const char of str) {
+      score += /[\u4e00-\u9fa5]/.test(char) ? 2 : 1;
+    }
+    return score;
+  };
+
+  // --- 核心工具函数：按权重截断 ---
+  const truncateByWeight = (str: string, limit: number) => {
+    let score = 0;
+    let result = '';
+    for (const char of str) {
+      const charWeight = /[\u4e00-\u9fa5]/.test(char) ? 2 : 1;
+      if (score + charWeight <= limit) {
+        score += charWeight;
+        result += char;
+      } else {
+        break;
+      }
+    }
+    return result;
+  };
+
+  const titleScore = getWeightScore(currentQuestion?.title || '');
+
+  // --- 标题输入函数 ---
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const score = getWeightScore(val);
+    if (score > TITLE_SCORE_LIMIT) {
+      setQuestionData({ title: truncateByWeight(val, TITLE_SCORE_LIMIT) });
+      setShowTitleError(true);
+    } else {
+      setQuestionData({ title: val });
+      setShowTitleError(false);
     }
   };
 
-  // --- 删除标签函数 ---
+  // --- 标签输入处理逻辑 ---
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const score = getWeightScore(val);
+    if (score > TAG_SCORE_LIMIT) {
+      setTagInput(truncateByWeight(val, TAG_SCORE_LIMIT));
+      setShowTagError(true);
+    } else {
+      setTagInput(val);
+      setShowTagError(false);
+    }
+  };
+
+  const handleAddTag = () => {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !tags.includes(trimmedTag) && tags.length < MAX_TAG_COUNT) {
+      setQuestionData({ tags: [...tags, trimmedTag] });
+      setTagInput(''); 
+      setShowTagError(false);
+    }
+  };
+
   const removeTag = (e: React.MouseEvent, tagIndex: number) => {
     e.stopPropagation();
     e.preventDefault();
@@ -42,49 +90,45 @@ export default function PublishQuestions() {
     setQuestionData({ tags: newTags });
   };
 
-  // --- 标题输入函数 ---
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuestionData({ title: e.target.value });
-  };
-
-  // --- 封装：标签输入处理逻辑 ---
-  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    // 实时检查新输入的字符串是否包含中文
-    const willHaveChinese = /[\u4e00-\u9fa5]/.test(val);
-    const limit = willHaveChinese ? MAX_CN_LENGTH : MAX_EN_LENGTH;
-    
-    // 如果切换字符类型导致长度溢出，则进行截断，否则正常输入
-    if (val.length > limit) {
-      setTagInput(val.slice(0, limit));
-      setShowError(true); // 触发截断时显示提示
-    } else {
-      setTagInput(val);
-      setShowError(false);
-    }
-  };
-
-  // 提示显示 2 秒后自动消失
   useEffect(() => {
-    if (showError) {
-      const timer = setTimeout(() => setShowError(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [showError]);
-
-  // --- 校验标签长度函数 ---
-  const hasChinese = /[\u4e00-\u9fa5]/.test(tagInput);
-  const currentLimit = hasChinese ? MAX_CN_LENGTH : MAX_EN_LENGTH;
+    const timer = setTimeout(() => {
+      setShowTagError(false);
+      setShowTitleError(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [showTagError, showTitleError]);
 
   return (
     <div className="p-4 space-y-6 bg-white min-h-screen">
-      {/* 标题输入 */}
-      <Input
-        placeholder="清晰的问题标题能获得更多回答..."
-        value={currentQuestion?.title || ''}
-        onChange={handleTitleChange}
-        className="border-none text-xl font-bold focus-visible:ring-0 px-0 placeholder:text-gray-300"
-      />
+      {/* 标题输入区 */}
+      <div className="space-y-1">
+        <div className="relative">
+          <Input
+            placeholder="清晰的问题标题能获得更多回答..."
+            value={currentQuestion?.title || ''}
+            onChange={handleTitleChange}
+            className="border-none text-xl font-bold focus-visible:ring-0 px-0 placeholder:text-gray-300"
+          />
+          {currentQuestion.title && (
+            <span 
+              className={`absolute right-0 bottom-2 text-[10px] transition-colors font-medium
+                ${showTitleError ? 'text-red-500 font-bold' : (titleScore < TITLE_MIN_SCORE ? 'text-orange-400' : 'text-gray-400')}
+              `}
+            >
+              {titleScore}/{TITLE_SCORE_LIMIT}
+            </span>
+          )}
+        </div>
+        
+        {/* 动态校验提示 */}
+        {showTitleError ? (
+          <p className="text-[11px] text-red-500 animate-pulse font-medium">标题内容过长，建议精简描述</p>
+        ) : titleScore > 0 && titleScore < TITLE_MIN_SCORE ? (
+          <p className="text-[11px] text-orange-400 font-medium italic flex items-center gap-1">
+             <AlertCircle className="w-3 h-3" /> 标题太短啦，再多写一点吧
+          </p>
+        ) : null}
+      </div>
 
       <div className="space-y-4">
         {/* 已有标签展示区 */}
@@ -97,7 +141,7 @@ export default function PublishQuestions() {
               {tag}
               <span 
                 onClick={(e) => removeTag(e, index)}
-                className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                className="hover:bg-blue-200 rounded-full p-0.5 transition-colors cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </span>
@@ -119,8 +163,8 @@ export default function PublishQuestions() {
               />
               
               {tagInput.length > 0 && (
-                <span className={`absolute right-0 top-1/2 -translate-y-1/2 text-[10px] transition-colors ${showError ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                  {tagInput.length}/{currentLimit}
+                <span className={`absolute right-0 top-1/2 -translate-y-1/2 text-[10px] transition-colors ${showTagError ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                  {getWeightScore(tagInput)}/{TAG_SCORE_LIMIT}
                 </span>
               )}
             </div>
@@ -138,11 +182,10 @@ export default function PublishQuestions() {
             </Button>
           </div>
 
-          {/* 引导文案：不强制，但告诉用户好处。当报错时显示错误提示。 */}
-          {showError ? (
+          {showTagError ? (
             <p className="flex items-center gap-1 text-[11px] text-red-500 animate-pulse font-medium">
               <AlertCircle className="w-3 h-3" />
-              已达该类字符长度上限 (中文{MAX_CN_LENGTH}/英文{MAX_EN_LENGTH})
+              单标签长度已达上限
             </p>
           ) : (
             <p className="flex items-center gap-1 text-[11px] text-gray-400 italic">
