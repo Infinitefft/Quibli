@@ -21,7 +21,7 @@ export interface Post {
 
 
 export interface Question {
-  id: number;  
+  id: number;
   title: string;  // 问题标题
   tags: string[];  // 标签
   publishedAt: string;   // 发布时间

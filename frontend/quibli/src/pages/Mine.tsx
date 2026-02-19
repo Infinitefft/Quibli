@@ -87,16 +87,15 @@ export default function Mine() {
   };
 
   return (
-    // Changed background to a soft Slate/Indigo gradient for a premium light feel
-    <div className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex flex-col relative overflow-hidden font-sans">
+    // 关键点 1: overscroll-none 禁用整个容器的橡皮筋效果
+    <div className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex flex-col relative overflow-hidden font-sans overscroll-none">
       
-      {/* Top Section: User Profile - Moved up with reduced padding (pt-6) */}
+      {/* 1. 固定顶部区域 */}
       <div className="pt-6 pb-4 px-6 relative z-10 shrink-0">
         <div className="flex items-center gap-5">
           <Drawer open={open} onOpenChange={setOpen}>
             <DrawerTrigger asChild>
               <div className="relative cursor-pointer group shrink-0">
-                {/* Avatar Container with subtle ring */}
                 <div className="h-[88px] w-[88px] rounded-full p-1 bg-white shadow-lg shadow-indigo-100 transition-transform active:scale-95">
                   <Avatar className="h-full w-full rounded-full border border-gray-100">
                     <AvatarImage src={user?.avatar} className="object-cover" />
@@ -105,14 +104,12 @@ export default function Mine() {
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                {/* Camera Badge */}
                 <div className="absolute bottom-1 right-1 bg-indigo-500 rounded-full p-1.5 border-[3px] border-white shadow-sm">
                   <Camera className="w-3.5 h-3.5 text-white" />
                 </div>
               </div>
             </DrawerTrigger>
 
-            {/* Drawer Content */}
             <DrawerContent>
               <div className="mx-auto w-full max-w-sm">
                 <DrawerHeader className="text-left px-6">
@@ -160,24 +157,13 @@ export default function Mine() {
         </div>
       </div>
 
-      {/* Main Content Body */}
-      <div className="flex-1 flex flex-col px-5 overflow-hidden">
-        
-        {/* Scrollable Menu List */}
-        <div className="flex-1 overflow-y-auto no-scrollbar py-2 pb-6">
-          <MenuRow 
-            icon={ShoppingBag} 
-            title="我的订单" 
-            subTitle="查看全部订单信息"
-            iconColor="text-orange-500"
-            iconBg="bg-orange-50"
-            onClick={() => console.log('Orders')} 
-          />
-          
+      {/* 2. 可滚动的主体区域 */}
+      {/* 关键点 2: touch-pan-y 允许垂直滑动但不允许触发浏览器的回弹逻辑 */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-5 overscroll-contain touch-pan-y">
+        <div className="py-2">   
           <MenuRow 
             icon={FileText} 
-            title="我的文章" 
-            subTitle="已发布 12 篇"
+            title="我的文章"
             iconColor="text-emerald-600"
             iconBg="bg-emerald-50"
             onClick={() => console.log('Articles')} 
@@ -186,7 +172,6 @@ export default function Mine() {
           <MenuRow 
             icon={MessageCircleQuestion} 
             title="我提的问题" 
-            subTitle="待解决 3 个"
             iconColor="text-violet-600"
             iconBg="bg-violet-50"
             onClick={() => console.log('Questions')} 
@@ -195,7 +180,6 @@ export default function Mine() {
           <MenuRow 
             icon={Star} 
             title="我的收藏" 
-            subTitle="共 28 条内容"
             iconColor="text-amber-500"
             iconBg="bg-amber-50"
             onClick={() => console.log('Favorites')} 
@@ -204,7 +188,6 @@ export default function Mine() {
           <MenuRow 
             icon={Heart} 
             title="我的点赞" 
-            subTitle="近期点赞记录"
             iconColor="text-rose-500"
             iconBg="bg-rose-50"
             onClick={() => console.log('Likes')} 
@@ -228,7 +211,6 @@ export default function Mine() {
             onClick={() => navigate('/rag')} 
           />
 
-
           <div className="mt-10 mb-8">
             <Button 
               variant="destructive" 
@@ -241,6 +223,8 @@ export default function Mine() {
           </div>
         </div>
 
+        {/* 3. 底部占位符：确保内容不被导航栏挡住 */}
+        <div className="h-[64px] shrink-0" />
       </div>
 
       {loading && <Loading />}
