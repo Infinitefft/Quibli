@@ -53,7 +53,7 @@ export default function Chat() {
       <div className="flex flex-col h-[100dvh] w-full bg-slate-50 font-sans overflow-hidden relative">
         
         {/* 1. Header: Fixed Top */}
-        <header className="fixed top-0 left-0 right-0 h-16 px-4 flex items-center gap-3 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
+        <header className="fixed top-0 left-0 right-0 h-16 px-4 flex items-center gap-3 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 touch-none">
           <HeaderLogo />
           <div className="flex flex-col justify-center h-full pt-1">
             <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700 leading-none mb-0.5">

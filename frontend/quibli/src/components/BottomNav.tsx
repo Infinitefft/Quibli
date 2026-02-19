@@ -143,7 +143,7 @@ export default function BottomNav() {
     <div className="fixed bottom-0 left-0 right-0 h-[64px] 
       bg-white border-t border-gray-100 dark:bg-black/95 dark:border-gray-800
       flex items-center justify-around
-      z-50 safe-area-bottom shadow-sm"
+      z-50 safe-area-bottom shadow-sm touch-none"
     >
       {tabs.map((tab) => {
         const IconComponent = tab.Icon;
