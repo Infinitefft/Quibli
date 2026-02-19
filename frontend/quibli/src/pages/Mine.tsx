@@ -1,5 +1,9 @@
+import {
+  useState
+} from 'react';
 // import { useMineStore } from '@/store/mine'
 import { useUserStore } from '@/store/user'
+import { useMineStore } from '@/store/mine';
 import { Button } from '@/components/ui/button';
 import {
   Avatar,
@@ -19,9 +23,7 @@ import {
 import { Camera, Upload, Sparkle } from 'lucide-react';
 import Loading from '@/components/Loading';
 import { useNavigate } from 'react-router-dom';
-import {
-  useState
-} from 'react';
+
 
 
 
@@ -31,8 +33,11 @@ export default function Mine() {
   const {
     user,
     logout,
-    aiAvatar,
   } = useUserStore();
+  const {
+    mineProfile,
+    aiAvatar,
+  } = useMineStore();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -71,11 +76,13 @@ export default function Mine() {
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={user?.avatar} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
-                    {user?.name?.[0].toUpperCase()}
+                    {user?.nickname?.[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </div>
             </DrawerTrigger>
+
+            {/* -------------------修改头像功能---------------- */}
             <DrawerContent>
               <div className="mx-auto w-full max-w-sm">
                 <DrawerHeader className="text-left">
@@ -112,7 +119,7 @@ export default function Mine() {
           </Drawer>
           {/* --------------------------------------------- */}
           <div>
-            <h2 className="text-xl font-bold">{user?.name}</h2>
+            <h2 className="text-xl font-bold">{user?.nickname}</h2>
             <p className="text-sm text-gray-500">ID: {user?.id}</p>
           </div>
         </div>
@@ -138,11 +145,15 @@ export default function Mine() {
             <span className="text-gray-400 text-sm">&gt;</span>
           </div>
         </div>
+
+
         <Button variant="destructive" className="w-full mt-8 h-12 text-base font-semibold
           shadow-md shadow-red-100" onClick={() => handleLogout()}
         >
           退出登录
         </Button>
+
+
       </div>
       { loading && <Loading /> }
     </div>
