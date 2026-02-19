@@ -5,7 +5,6 @@ import { Message } from './dto/chat.dto';
 import { ChatDeepSeek } from '@langchain/deepseek'
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 
-
 interface Post {
   title: string;
   category: string;
@@ -13,9 +12,9 @@ interface Post {
 }
 
 export function convertToLangChainMessages(messages: Message[])
-: (HumanMessage | AIMessage | SystemMessage)[] {
+  : (HumanMessage | AIMessage | SystemMessage)[] {
   return messages.map(msg => {
-    switch(msg.role) {
+    switch (msg.role) {
       case 'user':
         return new HumanMessage(msg.content);
       case 'assistant':
@@ -29,16 +28,16 @@ export function convertToLangChainMessages(messages: Message[])
 }
 
 export function cosineSimilarity(v1: number[], v2: number[]): number {
-    const dotProduct = v1.reduce((sum, val, i) => sum + val * v2[i], 0);
-    const normV1 = Math.sqrt(v1.reduce((sum, val) => sum + val * val, 0));
-    const normV2 = Math.sqrt(v2.reduce((sum, val) => sum + val * val, 0));
-    return dotProduct / (normV1 * normV2);
+  const dotProduct = v1.reduce((sum, val, i) => sum + val * v2[i], 0);
+  const normV1 = Math.sqrt(v1.reduce((sum, val) => sum + val * val, 0));
+  const normV2 = Math.sqrt(v2.reduce((sum, val) => sum + val * val, 0));
+  return dotProduct / (normV1 * normV2);
 }
 
 @Injectable()
 export class AIService {
   private chatModel: ChatDeepSeek;
-  
+
   constructor() {
     this.chatModel = new ChatDeepSeek({
       configuration: {
@@ -50,7 +49,7 @@ export class AIService {
       streaming: true,
     })
   }
-  
+
   async chat(messages: Message[], onToken: (token: string) => void) {
     const langChainMessages = convertToLangChainMessages(messages);
     const stream = await this.chatModel.stream(langChainMessages);
@@ -60,5 +59,85 @@ export class AIService {
         onToken(content);
       }
     }
+  }
+
+  // 生成头像
+  async avatar(nickname: string) {
+    const prompt = `你是一位头像设计师，请你根据用户的姓名${nickname}，设计一个专业的头像，风格卡通、时尚且好看。`;
+    
+    try {
+      // 1. 提交绘图任务到通义万相
+      const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable'
+        },
+        body: JSON.stringify({
+          model: 'wanx-v1',
+          input: { prompt },
+          parameters: { 
+            n: 1, 
+            size: '1024*1024' 
+          }
+        })
+      });
+
+      const submitResult: any = await response.json();
+      const taskId = submitResult.output?.task_id;
+
+      if (!taskId) {
+        throw new Error(`Failed to submit task: ${submitResult.message || 'Unknown error'}`);
+      }
+
+      // 2. 带限制保护的轮询
+      const imgUrl = await this.pollTaskResult(taskId);
+      console.log(imgUrl);
+      return imgUrl;
+    } catch (error) {
+      console.error("生成头像失败", error);
+      throw error;
+    }
+  }
+
+  // 轮询检查任务状态
+  private async pollTaskResult(taskId: string): Promise<string> {
+    const checkUrl = `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`;
+    const headers = { 'Authorization': `Bearer ${process.env.DASHSCOPE_API_KEY}` };
+    
+    const MAX_ATTEMPTS = 30; // 最大尝试 30 次
+    const INTERVAL = 2000;  // 每次间隔 2 秒
+    let attempts = 0;
+
+    while (attempts < MAX_ATTEMPTS) {
+      attempts++;
+      
+      const res = await fetch(checkUrl, { headers });
+      const statusResult: any = await res.json();
+      
+      // 容错处理：如果接口报错但没拿到 output
+      if (!statusResult.output) {
+        throw new Error('Invalid response from DashScope API');
+      }
+
+      const status = statusResult.output.task_status;
+
+      if (status === 'SUCCEEDED') {
+        // 成功：返回第一张图片的 URL
+        return statusResult.output.results[0].url;
+      } 
+      
+      if (status === 'FAILED' || status === 'UNKNOWN') {
+        // 失败：抛出 API 返回的具体错误信息
+        throw new Error(`Image generation failed: ${statusResult.output.message || 'Internal error'}`);
+      }
+
+      // 还在处理中，等待后重试
+      await new Promise(resolve => setTimeout(resolve, INTERVAL));
+    }
+
+    // 超过 60 秒（30次 * 2秒）仍未完成，强制断开
+    throw new Error('Image generation timed out after 60 seconds');
   }
 }

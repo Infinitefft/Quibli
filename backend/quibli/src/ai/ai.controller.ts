@@ -3,6 +3,8 @@ import {
   Post,
   Body,
   Res,
+  Get,
+  Query,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ChatDto } from './dto/chat.dto';
@@ -29,5 +31,10 @@ export class AIController {
       console.error(error);
       res.status(500).end();
     }
+  }
+
+  @Get('avatar')
+  async avatar(@Query('nickname') nickname: string) {
+    return this.aiService.avatar(nickname);
   }
 }
