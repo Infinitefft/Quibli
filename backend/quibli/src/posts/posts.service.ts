@@ -109,9 +109,10 @@ export class PostsService {
         SET embedding = ${JSON.stringify(vector)}::vector 
         WHERE id = ${post.id}
       `;
-      console.log(`文章 ID: ${post.id} 向量回填成功`);
+      // console.log(`文章 ID: ${post.id} 向量回填成功`);
     }).catch((err) => {
-      console.error('AI Embedding 失败:', err);
+      console.log(err);
+      // console.error('AI Embedding 失败:', err);
     });
 
     return post;

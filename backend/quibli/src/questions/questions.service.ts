@@ -110,7 +110,7 @@ export class QuestionsService {
         SET embedding = ${JSON.stringify(vector)}::vector 
         WHERE id = ${question.id}
       `;
-      console.log(`提问 ID: ${question.id} 向量回填成功`);
+      // console.log(`提问 ID: ${question.id} 向量回填成功`);
     }).catch((err) => {
       console.error('AI Embedding 失败 (Question):', err);
     });

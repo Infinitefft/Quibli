@@ -43,7 +43,7 @@ instance.interceptors.response.use(res => {
   const { config, response } = err;
   // config：原始请求的配置对象，包括 url、method、headers、data，自己加的token 等
   // 鉴权不成功返回 401 Unauthorized。
-  if (response?.stauts === 401 && !config._retry) {
+  if (response?.status === 401 && !config._retry) {
     // 401 就是token过期，如果token 过期了
     if (isRefreshing) {
       // 刷新了一次 token

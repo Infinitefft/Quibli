@@ -156,7 +156,7 @@ export class AIService {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'text-embedding-v4',
+        model: 'text-embedding-v2',
         input: text
       })
     });
