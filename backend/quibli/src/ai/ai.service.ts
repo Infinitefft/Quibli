@@ -140,4 +140,31 @@ export class AIService {
     // 超过 60 秒（30次 * 2秒）仍未完成，强制断开
     throw new Error('Image generation timed out after 60 seconds');
   }
+
+
+
+  // embedding
+  /**
+   * 将文本转换为 1536 维向量
+   * 适配：阿里云 Text-Embedding-V4
+   */
+  async getEmbedding(text: string): Promise<number[]> {
+    const response = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-v4',
+        input: text
+      })
+    });
+
+    const result: any = await response.json();
+    if (!result.data || !result.data[0].embedding) {
+      throw new Error(`Embedding failed: ${result.message || 'Unknown error'}`);
+    }
+    return result.data[0].embedding;
+  }
 }

@@ -22,6 +22,10 @@
   - Prisma ORM(pnpm i prisma@6.19.2, npx prisma init, npx prisma migrate dev --name add_posts)
   - PostgreSQL
   - JWT
+  - docker
+    - 查看所有运行中的容器：`docker ps`
+    - 查看所有容器（包括未运行的）：`docker ps -a`
+    - 进入默认数据库：`docker exec -it pgvector-db psql -U postgres -d postgres`
 - AI
 
 ---

@@ -12,6 +12,7 @@ import { PostsService } from './posts.service'
 import { PostsQueryDto } from './dto/posts-query.dto'
 // auth 模块
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { CreatePostDto } from './dto/create-post.dto';
 
 
 @Controller('posts')
@@ -27,22 +28,11 @@ export class PostsController {
   }
 
 
-  // 发布文章的处理函数
-  // restful
-  // post 名词 post 
-  // @Post()
-  // @UseGuards(JwtAuthGuard)   // 路由守卫
-  // createPost(
-  //   @Body("title") title: string,
-  //   @Body("content") content: string,
-  //   @Req() req
-  // ) {
-  //   // console.log(req.user);
-  //   const { user } = req;
-  //   return this.postsService.createPost({
-  //     title,
-  //     content,
-  //     userId: req.user.id
-  //   })
-  // }
+  @Post('publish')
+  @UseGuards(JwtAuthGuard)
+  async create(@Body() createPostDto: CreatePostDto, @Req() req) {
+    const userId = req.user.id;  // 验证通过，它会调用你 JwtStrategy 里的 validate(payload) 方法。
+    // 这个方法的返回值，会被 Passport 自动挂载到 req.user 上。
+    return this.postsService.create(userId, createPostDto);
+  }
 }

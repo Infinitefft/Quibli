@@ -103,7 +103,7 @@ const Loading: React.FC = () => {
 
         {/* Text */}
         <div className="text-black text-xs font-bold tracking-[0.3em] uppercase opacity-70">
-          Loading...
+          加载中...
         </div>
 
       </div>

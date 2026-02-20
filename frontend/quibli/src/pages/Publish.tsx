@@ -21,12 +21,12 @@ export default function Publish() {
   const handleClose = () => {
     setActive(false);
     // 等动画结束再跳回上一页
-    setTimeout(() => navigate(-1), 300);
+    setTimeout(() => navigate(-1), 100);
   };
 
   const handleNavigate = (path: string) => {
     setActive(false);
-    setTimeout(() => navigate(path), 300);
+    setTimeout(() => navigate(path), 100);
   };
 
   return (

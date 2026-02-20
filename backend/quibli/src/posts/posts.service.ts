@@ -4,11 +4,16 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service'
 import { PostsQueryDto } from './dto/posts-query.dto'
+import { CreatePostDto } from './dto/create-post.dto'
+import { AIService } from '../ai/ai.service'
 
 
 @Injectable()
 export class PostsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AIService,
+  ) {}
 
   async findAll(query: PostsQueryDto) {
     const { page = 1, limit = 10 } = query;
@@ -59,4 +64,54 @@ export class PostsService {
       postItems,
     };
   } 
+
+
+  async create(userId: number, createPostDto: CreatePostDto) {
+  const { title, content, tags = [] } = createPostDto;
+  
+  const normalizedTags = [...new Set(tags.map(t => t.trim()))].filter(Boolean);
+
+  // 2. 数据库事务操作：创建文章并原子化关联标签
+  const post = await this.prisma.post.create({
+    data: {
+      title,
+      content,
+      userId,
+      tags: {
+        create: normalizedTags.map((tagName) => ({
+          tag: {
+            connectOrCreate: {
+              where: { name: tagName },
+              create: { name: tagName },
+            },
+          },
+        })),
+      },
+    },
+    include: {
+      tags: {
+        include: { tag: true },
+      },
+    },
+  });
+
+  // 3. 准备语义化文本：标题 + 标签 + 正文前500字
+  const tagNames = post.tags.map((pt) => pt.tag.name).join(', ');
+  const textToEmbed = `标题: ${title}; 标签: ${tagNames || '无'}; 正文: ${content?.slice(0, 500) ?? ''}`;
+
+  // 4. 异步生成向量并回填 (Docker/pgvector 专用写法)
+  this.aiService.getEmbedding(textToEmbed).then(async (vector) => {
+    // 阿里向量是 [number, number, ...] 格式，需要转为 JSON 字符串再强转为 vector 类型
+    await this.prisma.$executeRaw`
+      UPDATE posts 
+      SET embedding = ${JSON.stringify(vector)}::vector 
+      WHERE id = ${post.id}
+    `;
+    console.log(`文章 ID: ${post.id} 向量回填成功`);
+  }).catch((err) => {
+    console.error('AI Embedding 失败:', err);
+  });
+
+  return post;
+}
 }
