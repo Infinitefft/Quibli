@@ -29,3 +29,10 @@ export const publishPosts = async (data:Partial<Post>) => {
     return null;
   }
 }
+
+
+export const getPostDetails = async (id: number) => {
+  const res = await axios.get(`/posts/${id}`);
+  // console.log(res);
+  return res;
+}

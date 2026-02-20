@@ -1,5 +1,6 @@
 import {
   Injectable,
+  NotFoundException,
 } from '@nestjs/common'
 
 import { PrismaService } from '../prisma/prisma.service'
@@ -64,6 +65,50 @@ export class PostsService {
       postItems,
     };
   } 
+
+  async findOne(id: number) {
+    const post = await this.prisma.post.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        user: true,
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            favorites: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return {
+      id: post.id,
+      title: post.title,
+      publishedAt: post.createAt?.toISOString() ?? '',
+      totalLikes: post._count.likes,
+      totalFavorites: post._count.favorites,
+      totalComments: post._count.comments,
+      user: {
+        id: post.user?.id ?? '',
+        phone: post.user?.phone ?? '',
+        nickname: post.user?.nickname ?? '',
+        avatar: post.user?.avatar ?? '',
+      },
+      content: post.content ?? '',
+      tags: post.tags.map((postTag) => postTag.tag.name),
+    };
+  }
 
 
   async publish(userId: number, createPostDto: CreatePostDto) {

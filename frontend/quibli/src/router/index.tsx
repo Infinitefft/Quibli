@@ -27,6 +27,8 @@ const Register = lazy(() => import('@/pages/Register'));
 const Loading = lazy(() => import('@/components/Loading'));
 const PublishQuestions = lazy(() => import('@/pages/Publish/PublishQuestions'));
 const PublishPosts = lazy(() => import('@/pages/Publish/PublishPosts'));
+const QuestionDetail = lazy(() => import('@/pages/QuestionDetail'));
+const PostDetail = lazy(() => import('@/pages/PostDetail'));
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -40,6 +42,8 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/register" element={<Register />} />
             <Route path="/publish/questions" element={<PublishQuestions />} />
             <Route path="/publish/posts" element={<PublishPosts />} />
+            <Route path="/questions/:id" element={<QuestionDetail />} />
+            <Route path="/posts/:id" element={<PostDetail />} />
 
             <Route path="/" element={<MainLayout />}>
               <Route path="" element={<Home />} />

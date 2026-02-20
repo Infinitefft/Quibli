@@ -27,3 +27,10 @@ export const publishQuestions = async (data: Partial<Question>) => {
     return null; 
   }
 }
+
+
+export const getQuestionDetails = async (id: number) => {
+  const res = axios.get(`/questions/${id}`);
+  // console.log(res);
+  return res;
+}

@@ -6,6 +6,8 @@ import {
   Body,
   UseGuards,
   Req,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 
 import { PostsService } from './posts.service'
@@ -36,5 +38,10 @@ export class PostsController {
     const userId = req.user.id;  // 验证通过，它会调用你 JwtStrategy 里的 validate(payload) 方法。
     // 这个方法的返回值，会被 Passport 自动挂载到 req.user 上。
     return this.postsService.publish(userId, createPostDto);
+  }
+
+  @Get(':id')
+  async getPostDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.postsService.findOne(id);
   }
 }

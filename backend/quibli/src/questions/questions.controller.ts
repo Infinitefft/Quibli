@@ -6,6 +6,8 @@ import {
   Body,
   UseGuards,
   Req,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 
 import { QuestionsQueryDto } from './dto/questions-query.dto';
@@ -32,5 +34,10 @@ export class QuestionsController {
   async publishQuestion(@Body() createQuestionDto: CreateQuestionDto, @Req() req) {
     const userId = req.user.id;
     return this.questionsService.publish(userId, createQuestionDto);
+  }
+
+  @Get(':id')
+  async getQuestionDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.questionsService.findOne(id);
   }
 }
