@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/SearchInput';
 import { Search } from 'lucide-react';
 import InfiniteScroll from '@/components/InfiniteScroll';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { refreshHomePosts, refreshHomeQuestions } from '@/store/homeRefresh';
 
 import PostsItem from '@/pages/PostsItem';
 import useHomePostStore from '@/store/homePost';
@@ -127,6 +129,15 @@ export default function Home() {
     touchEndX.current = null;
   };
 
+  // 新增：下拉刷新处理函数
+  const handleRefresh = async () => {
+    if (activeTab === 'posts') {
+      await refreshHomePosts();
+    } else {
+      await refreshHomeQuestions();
+    }
+  };
+
   return (
     <div className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col overflow-hidden">
       <style>{`
@@ -230,17 +241,19 @@ export default function Home() {
             className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[105px] pb-24"
             onScroll={handleScroll}
           >
-            <InfiniteScroll
-              onLoadMore={loadMorePosts}
-              hasMore={hasMorePosts}
-              isLoading={loadingPosts}
-            >
-              <div className="pb-4">
-                {posts.map((post) => (
-                  <PostsItem key={post.id} post={post} />
-                ))}
-              </div>
-            </InfiniteScroll>
+            <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={postsContainerRef}>
+              <InfiniteScroll
+                onLoadMore={loadMorePosts}
+                hasMore={hasMorePosts}
+                isLoading={loadingPosts}
+              >
+                <div className="pb-4 bg-gray-50">
+                  {posts.map((post) => (
+                    <PostsItem key={post.id} post={post} />
+                  ))}
+                </div>
+              </InfiniteScroll>
+            </PullToRefresh>
           </div>
 
           {/* Questions List */}
@@ -249,17 +262,19 @@ export default function Home() {
             className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[105px] pb-24"
             onScroll={handleScroll}
           >
-            <InfiniteScroll
-              onLoadMore={loadMoreQuestions}
-              hasMore={hasMoreQuestions}
-              isLoading={loadingQuestions}
-            >
-              <div className="pb-4">
-                {questions.map((question) => (
-                  <QuestionsItem key={question.id} question={question} />
-                ))}
-              </div>
-            </InfiniteScroll>
+            <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={questionsContainerRef}>
+              <InfiniteScroll
+                onLoadMore={loadMoreQuestions}
+                hasMore={hasMoreQuestions}
+                isLoading={loadingQuestions}
+              >
+                <div className="pb-4 bg-gray-50">
+                  {questions.map((question) => (
+                    <QuestionsItem key={question.id} question={question} />
+                  ))}
+                </div>
+              </InfiniteScroll>
+            </PullToRefresh>
           </div>
         </div>
       </main>

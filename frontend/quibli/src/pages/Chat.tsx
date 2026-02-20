@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Sparkles, User, Bot } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw } from 'lucide-react';
 import { useChatBot, useAutoScroll } from '@/hooks/useChatBot';
 import ChatGreetings from '@/components/ui/ChatGreetings';
 import BottomNav from '@/components/BottomNav';
@@ -61,6 +61,12 @@ export default function Chat() {
             </h1>
             <p className="text-[10px] text-slate-400 font-medium tracking-wide">AI COMPANION</p>
           </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="ml-auto p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors active:scale-95"
+          >
+            <RotateCcw size={20} />
+          </button>
         </header>
 
         {/* 2. Main Chat Area */}
