@@ -37,4 +37,13 @@ export class AIController {
   async avatar(@Query('nickname') nickname: string) {
     return this.aiService.avatar(nickname);
   }
+
+  @Get('getSearchSuggestions')
+  async getSuggestions(@Query('keyword') keyword: string) {
+    // 简单的参数校验，如果 keyword 为空直接返回空数组
+    if (!keyword) {
+      return [];
+    }
+    return this.aiService.getSuggestions(keyword);
+  }
 }

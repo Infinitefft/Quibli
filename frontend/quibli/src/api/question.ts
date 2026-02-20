@@ -34,3 +34,16 @@ export const getQuestionDetails = async (id: number) => {
   // console.log(res);
   return res;
 }
+
+
+export const getQuestionComments = async (id: number, page: number = 1, limit: number = 10) => {
+  try {
+    const res = await axios.get(`/questions/${id}/comments`, {
+      params: { page, limit }
+    });
+    return res;
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}

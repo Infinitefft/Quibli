@@ -29,9 +29,9 @@ export const useSearchSuggestionsStore = create<SearchSuggestionsState>()(
       try {
         // url 传输是 ASCII 编码，那么需要对 keyword 进行编码
         const res = await getSearchSuggestions(encodeURIComponent(keyword));
-        const data: [] = res.data || [];
+        const data: string[] = res || [];
         set({ suggestions: data})
-        get().addHistory(keyword.trim());
+        // get().addHistory(keyword.trim());
       } catch (err) {
         console.log(err);
         set({ suggestions: [] });

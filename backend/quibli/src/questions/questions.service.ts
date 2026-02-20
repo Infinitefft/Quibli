@@ -65,6 +65,7 @@ export class QuestionsService {
     };
   }
 
+  
   async findOne(id: number) {
     const question = await this.prisma.question.findUnique({
       where: {
@@ -106,6 +107,53 @@ export class QuestionsService {
         avatar: question.user?.avatar ?? '',
       },
     };
+  }
+
+  // 获取问题的评论（一级回答 + 二级回复）
+  async findComments(questionId: number, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+
+    const comments = await this.prisma.comment.findMany({
+      where: {
+        questionId,
+        parentId: null, // 获取一级回答
+      },
+      skip,
+      take: limit,
+      orderBy: { createAt: 'desc' },
+      include: {
+        user: true,
+        replies: {
+          include: {
+            user: true,
+            parent: { include: { user: true } }, // 用于平铺时显示“回复了谁”
+          },
+          orderBy: { createAt: 'asc' },
+        },
+      },
+    });
+
+    return comments.map((c) => ({
+      id: c.id,
+      content: c.content,
+      createdAt: c.createAt,
+      user: {
+        id: c.user.id,
+        nickname: c.user.nickname,
+        avatar: c.user.avatar,
+      },
+      replies: c.replies.map((r) => ({
+        id: r.id,
+        content: r.content,
+        createdAt: r.createAt,
+        user: {
+          id: r.user.id,
+          nickname: r.user.nickname,
+          avatar: r.user.avatar,
+        },
+        replyToUser: r.parent?.user?.nickname ?? null,
+      })),
+    }));
   }
 
 

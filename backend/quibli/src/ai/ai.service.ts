@@ -2,14 +2,10 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Message } from './dto/chat.dto';
+import { PrismaService } from '../prisma/prisma.service'
 import { ChatDeepSeek } from '@langchain/deepseek'
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 
-interface Post {
-  title: string;
-  category: string;
-  embedding: number[];
-}
 
 export function convertToLangChainMessages(messages: Message[])
   : (HumanMessage | AIMessage | SystemMessage)[] {
@@ -27,18 +23,12 @@ export function convertToLangChainMessages(messages: Message[])
   })
 }
 
-export function cosineSimilarity(v1: number[], v2: number[]): number {
-  const dotProduct = v1.reduce((sum, val, i) => sum + val * v2[i], 0);
-  const normV1 = Math.sqrt(v1.reduce((sum, val) => sum + val * val, 0));
-  const normV2 = Math.sqrt(v2.reduce((sum, val) => sum + val * val, 0));
-  return dotProduct / (normV1 * normV2);
-}
 
 @Injectable()
 export class AIService {
   private chatModel: ChatDeepSeek;
 
-  constructor() {
+  constructor(private prisma: PrismaService) {
     this.chatModel = new ChatDeepSeek({
       configuration: {
         apiKey: process.env.DEEPSEEK_API_KEY,
@@ -166,5 +156,39 @@ export class AIService {
       throw new Error(`Embedding failed: ${result.message || 'Unknown error'}`);
     }
     return result.data[0].embedding;
+  }
+
+
+  // 搜素建议
+  async getSuggestions(keyword: string) {
+    if (!keyword || keyword.trim().length < 2) return [];
+
+    try {
+      const vector = await this.getEmbedding(keyword);
+      const vectorString = JSON.stringify(vector);
+
+      // 1. 语义检索：合并 posts 和 questions，按距离全局排序
+      const results: any[] = await this.prisma.$queryRaw`
+        SELECT title
+        FROM (
+          SELECT title, (embedding <=> ${vectorString}::vector) as distance 
+          FROM posts 
+          WHERE embedding IS NOT NULL
+          UNION ALL
+          SELECT title, (embedding <=> ${vectorString}::vector) as distance 
+          FROM questions 
+          WHERE embedding IS NOT NULL
+        ) AS combined_results
+        GROUP BY title
+        ORDER BY MIN(distance) ASC
+        LIMIT 7
+      `;
+
+      // 2. 仅返回去重后的标题字符串数组
+      return results.map(item => item.title);
+    } catch (error) {
+      console.error("获取搜索建议失败", error);
+      return [];
+    }
   }
 }

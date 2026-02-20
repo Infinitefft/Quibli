@@ -36,3 +36,19 @@ export const getPostDetails = async (id: number) => {
   // console.log(res);
   return res;
 }
+
+
+export const getPostComments = async (id: number, page: number = 1, limit: number = 10) => {
+  try {
+    const res = await axios.get(`/posts/${id}/comments`, {
+      params: {
+        page,
+        limit
+      }
+    });
+    return res;
+  } catch (err) {
+    console.log(err);
+    return []; // 评论出错返回空数组，防止前端 map 报错
+  }
+}

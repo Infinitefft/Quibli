@@ -44,4 +44,9 @@ export class PostsController {
   async getPostDetail(@Param('id', ParseIntPipe) id: number) {
     return this.postsService.findOne(id);
   }
+
+  @Get(':id/comments')
+  async getPostComments(@Param('id', ParseIntPipe) id: number, @Query() query: PostsQueryDto) {
+    return this.postsService.findComments(id, query.page, query.limit);
+  }
 }

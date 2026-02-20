@@ -18,7 +18,7 @@ import MainLayout from '@/layouts/MainLayout';
 
 const Home = lazy(() => import('@/components/KeepAliveHome'));   // 拿到缓存的首页
 const Mine = lazy(() => import('@/pages/Mine'));
-const Search = lazy(() => import('@/pages/SearchDetails'));
+const Search = lazy(() => import('@/pages/SearchSuggestions'));
 const Login = lazy(() => import('@/pages/Login'));
 const Chat = lazy(() => import('@/pages/Chat'));
 const Publish = lazy(() => import('@/pages/Publish'));

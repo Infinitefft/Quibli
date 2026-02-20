@@ -40,4 +40,14 @@ export class QuestionsController {
   async getQuestionDetail(@Param('id', ParseIntPipe) id: number) {
     return this.questionsService.findOne(id);
   }
+
+
+  @Get(':id/comments')
+  async getQuestionComments(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.questionsService.findComments(id, page, limit);
+  }
 }

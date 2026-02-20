@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 
-export default function SearchDetails() {
+export default function SearchSuggestions() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
 
