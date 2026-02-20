@@ -59,7 +59,7 @@ export const usePublishStore = create<PublishState>()(
           await publishPosts(currentPost);
           // 发布成功，清理本地草稿
           resetPost();
-        } catch (err) {
+        } catch (err) { 
           console.error('提交失败:', err);
           throw err;
         }

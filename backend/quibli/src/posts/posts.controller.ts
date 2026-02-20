@@ -29,10 +29,12 @@ export class PostsController {
 
 
   @Post('publish')
-  @UseGuards(JwtAuthGuard)
-  async create(@Body() createPostDto: CreatePostDto, @Req() req) {
+  @UseGuards(JwtAuthGuard)   // 路由守卫
+  async publish(@Body() createPostDto: CreatePostDto, @Req() req) {
+    // console.log('Body:', createPostDto);
+    // console.log('User ID from Token:', req.user.id);
     const userId = req.user.id;  // 验证通过，它会调用你 JwtStrategy 里的 validate(payload) 方法。
     // 这个方法的返回值，会被 Passport 自动挂载到 req.user 上。
-    return this.postsService.create(userId, createPostDto);
+    return this.postsService.publish(userId, createPostDto);
   }
 }

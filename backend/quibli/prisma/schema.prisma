@@ -79,6 +79,7 @@ model Post {
   
   createAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @updatedAt @map("updated_at")
+  embedding Unsupported("vector(1536)")?
 
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -101,6 +102,7 @@ model Question {
 
   createAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @updatedAt @map("updated_at")
+  embedding Unsupported("vector(1536)")?
 
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 

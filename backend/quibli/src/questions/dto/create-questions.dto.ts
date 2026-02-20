@@ -1,15 +1,11 @@
 import { IsString, IsArray, IsOptional, IsNotEmpty } from 'class-validator';
 
-export class CreatePostDto {
+export class CreateQuestionDto {
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @IsString()
-  @IsNotEmpty()
-  content: string;
-
   @IsArray()
-  @IsOptional() // 如果 tags 可以不传，就加这个
+  @IsOptional()
   tags?: string[];
 }

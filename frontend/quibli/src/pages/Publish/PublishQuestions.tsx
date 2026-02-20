@@ -16,7 +16,7 @@ export default function PublishQuestions() {
   const [showTitleError, setShowTitleError] = useState(false);
 
   const TITLE_MIN_SCORE = 7;
-  const TITLE_SCORE_LIMIT = 46;
+  const TITLE_SCORE_LIMIT = 100;
   const TAG_SCORE_LIMIT = 14;
   const MAX_TAG_COUNT = 5;
 

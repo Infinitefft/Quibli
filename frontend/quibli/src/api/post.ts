@@ -21,7 +21,8 @@ export const fetchPosts = async (page: number = 1, limit: number = 10) => {
 
 export const publishPosts = async (data:Partial<Post>) => {
   try {
-    const res = await axios.post('/post/publish', data);
+    const res = await axios.post('/posts/publish', data);
+    console.log("req.data:", data);
     return res;
   } catch(err) {
     console.log(err);

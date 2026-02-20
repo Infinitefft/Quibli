@@ -1,12 +1,18 @@
 import {
-  Controller, 
-  Query,
+  Controller,
   Get,
   Post,
+  Query,
+  Body,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 
 import { QuestionsQueryDto } from './dto/questions-query.dto';
 import { QuestionsService } from './questions.service';
+import { CreateQuestionDto } from './dto/create-questions.dto';
+// auth 模块
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 
 @Controller('questions')
@@ -19,5 +25,12 @@ export class QuestionsController {
   @Get()
   async getQuestions(@Query() query: QuestionsQueryDto) {
     return this.questionsService.findAll(query);
+  }
+
+  @Post('publish')
+  @UseGuards(JwtAuthGuard)
+  async publishQuestion(@Body() createQuestionDto: CreateQuestionDto, @Req() req) {
+    const userId = req.user.id;
+    return this.questionsService.publish(userId, createQuestionDto);
   }
 }

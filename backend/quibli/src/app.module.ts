@@ -7,11 +7,13 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PostsModule } from './posts/posts.module';
 import { QuestionsModule } from './questions/questions.module';
 import { AIModule } from './ai/ai.module';
+import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 
 @Module({
   imports: [AuthModule, UserModule, PrismaModule, PostsModule, QuestionsModule, AIModule],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtStrategy, JwtAuthGuard],
+  exports: [JwtAuthGuard],
 })
 export class AppModule {}
