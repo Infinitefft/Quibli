@@ -191,4 +191,95 @@ export class AIService {
       return [];
     }
   }
+
+
+  // 语义化搜索文章和问题
+  async search(keyword: string, type: 'post' | 'question' = 'post', page: number = 1, limit: number = 10) {
+  if (!keyword || keyword.trim().length === 0) {
+    return type === 'post' ? { postItems: [] } : { questionItems: [] };
+  }
+
+  const vector = await this.getEmbedding(keyword);
+  const vectorString = JSON.stringify(vector);
+  const skip = (page - 1) * limit;
+
+  if (type === 'post') {
+    const posts: any[] = await this.prisma.$queryRaw`
+      SELECT 
+        p.id, p.title, p.content, p."createAt",
+        u.id AS "userId", u.phone AS "userPhone", u.nickname AS "userNickname", u.avatar AS "userAvatar",
+        (SELECT COUNT(*)::int FROM "PostLike" WHERE "postId" = p.id) AS "totalLikes",
+        (SELECT COUNT(*)::int FROM "PostFavorite" WHERE "postId" = p.id) AS "totalFavorites",
+        (SELECT COUNT(*)::int FROM "PostComment" WHERE "postId" = p.id) AS "totalComments",
+        ARRAY(
+          SELECT t.name 
+          FROM "Tag" t 
+          JOIN "_PostToTag" pt ON pt."B" = t.id 
+          WHERE pt."A" = p.id
+        ) AS tags
+      FROM posts p
+      LEFT JOIN users u ON p."userId" = u.id
+      WHERE p.embedding IS NOT NULL
+      ORDER BY p.embedding <=> ${vectorString}::vector ASC
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    const postItems = posts.map((post) => ({
+      id: post.id,
+      title: post.title,
+      publishedAt: post.createAt?.toISOString() ?? '',
+      totalLikes: post.totalLikes,
+      totalFavorites: post.totalFavorites,
+      totalComments: post.totalComments,
+      user: {
+        id: post.userId ?? '',
+        phone: post.userPhone ?? '',
+        nickname: post.userNickname ?? '',
+        avatar: post.userAvatar ?? '',
+      },
+      content: post.content ?? '',
+      tags: post.tags,
+    }));
+
+    return { postItems };
+  } else {
+    const questions: any[] = await this.prisma.$queryRaw`
+      SELECT 
+        q.id, q.title, q."createAt",
+        u.id AS "userId", u.phone AS "userPhone", u.nickname AS "userNickname", u.avatar AS "userAvatar",
+        (SELECT COUNT(*)::int FROM "QuestionLike" WHERE "questionId" = q.id) AS "totalLikes",
+        (SELECT COUNT(*)::int FROM "QuestionFavorite" WHERE "questionId" = q.id) AS "totalFavorites",
+        (SELECT COUNT(*)::int FROM "QuestionComment" WHERE "questionId" = q.id) AS "totalAnswers",
+        ARRAY(
+          SELECT t.name 
+          FROM "Tag" t 
+          JOIN "_QuestionToTag" qt ON qt."B" = t.id 
+          WHERE qt."A" = q.id
+        ) AS tags
+      FROM questions q
+      LEFT JOIN users u ON q."userId" = u.id
+      WHERE q.embedding IS NOT NULL
+      ORDER BY q.embedding <=> ${vectorString}::vector ASC
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    const questionItems = questions.map((question) => ({
+      id: question.id,
+      title: question.title,
+      tags: question.tags,
+      publishedAt: question.createAt?.toISOString() ?? '',
+      totalAnswers: question.totalAnswers,
+      totalLikes: question.totalLikes,
+      totalFavorites: question.totalFavorites,
+      user: {
+        id: question.userId ?? '',
+        phone: question.userPhone ?? '',
+        nickname: question.userNickname ?? '',
+        avatar: question.userAvatar ?? '',
+      },
+    }));
+
+    return { questionItems };
+  }
+}
 }
