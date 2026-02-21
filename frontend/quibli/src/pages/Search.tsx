@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/SearchInput';
-import { Search as SearchIcon, ArrowLeft } from 'lucide-react';
+import { Search as SearchIcon, ArrowLeft, Loader2 } from 'lucide-react';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { Button } from '@/components/ui/button';
 import PostsItem from '@/pages/PostsItem';
@@ -13,11 +13,10 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get('keyword') || '';
-
-  const { 
-    keyword: storeKeyword, 
-    activeTab, 
-    postState, 
+  const {
+    keyword: storeKeyword,
+    activeTab,
+    postState,
     questionState,
     setKeyword,
     setActiveTab,
@@ -29,8 +28,6 @@ export default function SearchPage() {
   const headerRef = useRef<HTMLElement>(null);
   const lastScrollY = useRef(0);
   const currentTranslateY = useRef(0);
-  
-  // 滚动容器 Ref，用于恢复和保存位置
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const questionsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -69,16 +66,13 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    // 如果 URL 中的关键词变了（新搜索），则重置 Store 并重新加载
     if (keyword && keyword !== storeKeyword) {
       reset();
       setKeyword(keyword);
-      // 注意：这里不需要立即调用 loadData，下面的 useEffect 会因为 initialized 为 false 而触发加载
     }
   }, [keyword, storeKeyword, reset, setKeyword]);
 
   useEffect(() => {
-    // 只有当 Store 中的 keyword 与 URL 同步时才加载数据
     if (keyword && keyword === storeKeyword) {
       const currentState = activeTab === 'posts' ? postState : questionState;
       if (!currentState.initialized && !currentState.loading) {
@@ -87,9 +81,7 @@ export default function SearchPage() {
     }
   }, [activeTab, keyword, storeKeyword, postState.initialized, questionState.initialized]);
 
-  // 恢复滚动位置 & 卸载时保存滚动位置
   useLayoutEffect(() => {
-    // 恢复滚动
     if (activeTab === 'posts' && postsContainerRef.current) {
       postsContainerRef.current.scrollTop = postState.scrollTop;
     } else if (activeTab === 'questions' && questionsContainerRef.current) {
@@ -97,7 +89,6 @@ export default function SearchPage() {
     }
 
     return () => {
-      // 离开页面时保存当前滚动位置到 Store
       if (postsContainerRef.current) {
         useSearchResultStore.getState().setPostState({ scrollTop: postsContainerRef.current.scrollTop });
       }
@@ -105,15 +96,13 @@ export default function SearchPage() {
         useSearchResultStore.getState().setQuestionState({ scrollTop: questionsContainerRef.current.scrollTop });
       }
     };
-  }, []); // 仅在组件挂载/卸载时执行
+  }, [activeTab]);
 
   const handleItemClick = (type: 'posts' | 'questions', id: number | string) => {
     if (!id) return;
-    // 携带当前的完整搜索 URL
     const currentSearchPath = window.location.pathname + window.location.search;
     navigate(`/${type}/${id}`, { state: { fromUrl: currentSearchPath } });
   };
-   
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollTop = e.currentTarget.scrollTop;
@@ -129,11 +118,11 @@ export default function SearchPage() {
     <div className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col overflow-hidden">
       <header ref={headerRef} className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm transition-transform duration-200 will-change-transform">
         <div className="h-[57px] px-2 py-3 flex items-center space-x-2 border-b">
-          <Button size="icon" variant="ghost" onClick={() => navigate(-1)}>
+          <Button size="icon" variant="ghost" onClick={() => navigate('/searchsuggestions')}>
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Button>
           <div className="flex-1">
-            <Input 
+            <Input
               value={keyword}
               readOnly
               icon={<SearchIcon className="w-4 h-4 text-gray-400" />}
@@ -161,25 +150,49 @@ export default function SearchPage() {
              style={{ transform: activeTab === 'posts' ? 'translateX(0)' : 'translateX(-50%)' }}>
           
           <div ref={postsContainerRef} className="w-screen h-full overflow-y-auto pt-[105px] pb-10" onScroll={handleScroll}>
-            <InfiniteScroll onLoadMore={() => loadData('posts')} hasMore={postState.hasMore} isLoading={postState.loading}>
-              <div className="space-y-1">
-                {postState.list.map((post) => (
-                  <div key={`post-${post.id}`}>
-                    <PostsItem post={post} onClick={() => handleItemClick('posts', post.id)} />
-                  </div>
-                ))}
+            <InfiniteScroll 
+              onLoadMore={() => loadData('posts')} 
+              hasMore={postState.initialized && postState.hasMore} 
+              isLoading={postState.loading}
+            >
+              {postState.initialized && postState.list.length === 0 ? (
+                <div className="py-20 text-center text-sm text-gray-400">没有找到相关文章</div>
+              ) : (
+                <div className="space-y-1">
+                  {postState.list.map((post) => (
+                    <div key={`post-${post.id}`}>
+                      <PostsItem post={post} onClick={() => handleItemClick('posts', post.id)} />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="h-16 flex justify-center items-center text-sm text-gray-400">
+                {postState.loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {postState.initialized && !postState.hasMore && !postState.loading && '--- 我是有底线的 ---'}
               </div>
             </InfiniteScroll>
           </div>
 
           <div ref={questionsContainerRef} className="w-screen h-full overflow-y-auto pt-[105px] pb-10" onScroll={handleScroll}>
-            <InfiniteScroll onLoadMore={() => loadData('questions')} hasMore={questionState.hasMore} isLoading={questionState.loading}>
-              <div className="space-y-1">
-                {questionState.list.map((q) => (
-                  <div key={`q-${q.id}`}>
-                    <QuestionsItem question={q} onClick={() => handleItemClick('questions', q.id)} />
-                  </div>
-                ))}
+            <InfiniteScroll 
+              onLoadMore={() => loadData('questions')} 
+              hasMore={questionState.initialized && questionState.hasMore} 
+              isLoading={questionState.loading}
+            >
+              {questionState.initialized && questionState.list.length === 0 ? (
+                <div className="py-20 text-center text-sm text-gray-400">没有找到相关问答</div>
+              ) : (
+                <div className="space-y-1">
+                  {questionState.list.map((q) => (
+                    <div key={`q-${q.id}`}>
+                      <QuestionsItem question={q} onClick={() => handleItemClick('questions', q.id)} />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="h-16 flex justify-center items-center text-sm text-gray-400">
+                {questionState.loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {questionState.initialized && !questionState.hasMore && !questionState.loading && '--- 我是有底线的 ---'}
               </div>
             </InfiniteScroll>
           </div>

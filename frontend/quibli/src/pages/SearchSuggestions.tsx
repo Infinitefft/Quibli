@@ -49,7 +49,7 @@ export default function SearchSuggestions() {
   return (
     <div className="p-3 max-w-md mx-auto">
       <div className="flex items-center gap-2">
-        <Button size="icon" variant="ghost" onClick={() => navigate(-1)}>
+        <Button size="icon" variant="ghost" onClick={() => navigate('/')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="relative flex-1">
