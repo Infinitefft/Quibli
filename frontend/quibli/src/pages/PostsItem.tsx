@@ -5,6 +5,7 @@ import { MessageSquare, Heart, Star, MoreHorizontal } from 'lucide-react';
 
 interface PostsItemProps {
   post: Post;
+  onClick?: () => void;
 }
 
 // Helper to format date
@@ -22,12 +23,12 @@ const formatDate = (dateString: string) => {
   }
 };
 
-const PostsItem: React.FC<PostsItemProps> = ({ post }) => {
+const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
   const navigate = useNavigate();
 
   return (
     <div 
-      onClick={() => navigate(`posts/${post.id}`)} 
+      onClick={onClick || (() => navigate(`/posts/${post.id}`))}
       className="bg-white mb-2 p-4 active:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
     >
       {/* Header: User Info */}

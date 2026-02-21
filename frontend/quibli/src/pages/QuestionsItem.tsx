@@ -5,6 +5,7 @@ import { MessageCircle, ThumbsUp, Star } from 'lucide-react';
 
 interface QuestionsItemProps {
   question: Question;
+  onClick?: () => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -20,12 +21,12 @@ const formatDate = (dateString: string) => {
   }
 };
 
-const QuestionsItem: React.FC<QuestionsItemProps> = ({ question }) => {
+const QuestionsItem: React.FC<QuestionsItemProps> = ({ question, onClick }) => {
   const navigate = useNavigate();
 
   return (
     <div 
-        onClick={() => navigate(`questions/${question.id}`)} 
+        onClick={onClick || (() => navigate(`/questions/${question.id}`))}
         className="bg-white mb-2 p-4 active:bg-gray-50 border-b border-gray-100 last:border-0"
     >
       {/* Row 1: Publisher Info (Avatar + Nickname) + Date */}

@@ -44,7 +44,7 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/publish/posts" element={<PublishPosts />} />
             <Route path="/questions/:id" element={<QuestionDetail />} />
             <Route path="/posts/:id" element={<PostDetail />} />
-            <Route path="/SearchSuggestions" element={<SearchSuggestions />} />
+            <Route path="/searchsuggestions" element={<SearchSuggestions />} />
             <Route path="/search" element={<Search />} />
 
             <Route path="/" element={<MainLayout />}>

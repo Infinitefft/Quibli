@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/SearchInput';
 import { Search as SearchIcon, ArrowLeft } from 'lucide-react';
@@ -7,33 +7,32 @@ import { Button } from '@/components/ui/button';
 import PostsItem from '@/pages/PostsItem';
 import QuestionsItem from '@/pages/QuestionsItem';
 import { SearchPostAndQuestion } from '@/api/search';
-
-interface SearchState {
-  list: any[];
-  page: number;
-  hasMore: boolean;
-  loading: boolean;
-  initialized: boolean;
-}
+import { useSearchResultStore } from '@/store/searchResult';
 
 export default function SearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get('keyword') || '';
 
-  const [activeTab, setActiveTab] = useState<'posts' | 'questions'>('posts');
-  
-  const [postState, setPostState] = useState<SearchState>({ 
-    list: [], page: 1, hasMore: true, loading: false, initialized: false 
-  });
-  const [questionState, setQuestionState] = useState<SearchState>({ 
-    list: [], page: 1, hasMore: true, loading: false, initialized: false 
-  });
+  const { 
+    keyword: storeKeyword, 
+    activeTab, 
+    postState, 
+    questionState,
+    setKeyword,
+    setActiveTab,
+    setPostState,
+    setQuestionState,
+    reset
+  } = useSearchResultStore();
 
   const headerRef = useRef<HTMLElement>(null);
   const lastScrollY = useRef(0);
   const currentTranslateY = useRef(0);
-  const lastKeywordRef = useRef(keyword);
+  
+  // 滚动容器 Ref，用于恢复和保存位置
+  const postsContainerRef = useRef<HTMLDivElement>(null);
+  const questionsContainerRef = useRef<HTMLDivElement>(null);
 
   const loadData = async (type: 'posts' | 'questions', isInitial = false) => {
     const state = type === 'posts' ? postState : questionState;
@@ -70,26 +69,51 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    if (keyword && keyword !== lastKeywordRef.current) {
-      lastKeywordRef.current = keyword;
-      const reset = { list: [], page: 1, hasMore: true, loading: false, initialized: false };
-      setPostState(reset);
-      setQuestionState(reset);
-      loadData(activeTab, true);
+    // 如果 URL 中的关键词变了（新搜索），则重置 Store 并重新加载
+    if (keyword && keyword !== storeKeyword) {
+      reset();
+      setKeyword(keyword);
+      // 注意：这里不需要立即调用 loadData，下面的 useEffect 会因为 initialized 为 false 而触发加载
     }
-  }, [keyword]);
+  }, [keyword, storeKeyword, reset, setKeyword]);
 
   useEffect(() => {
-    const currentState = activeTab === 'posts' ? postState : questionState;
-    if (keyword && !currentState.initialized && !currentState.loading) {
-      loadData(activeTab, true);
+    // 只有当 Store 中的 keyword 与 URL 同步时才加载数据
+    if (keyword && keyword === storeKeyword) {
+      const currentState = activeTab === 'posts' ? postState : questionState;
+      if (!currentState.initialized && !currentState.loading) {
+        loadData(activeTab, true);
+      }
     }
-  }, [activeTab, keyword]);
+  }, [activeTab, keyword, storeKeyword, postState.initialized, questionState.initialized]);
+
+  // 恢复滚动位置 & 卸载时保存滚动位置
+  useLayoutEffect(() => {
+    // 恢复滚动
+    if (activeTab === 'posts' && postsContainerRef.current) {
+      postsContainerRef.current.scrollTop = postState.scrollTop;
+    } else if (activeTab === 'questions' && questionsContainerRef.current) {
+      questionsContainerRef.current.scrollTop = questionState.scrollTop;
+    }
+
+    return () => {
+      // 离开页面时保存当前滚动位置到 Store
+      if (postsContainerRef.current) {
+        useSearchResultStore.getState().setPostState({ scrollTop: postsContainerRef.current.scrollTop });
+      }
+      if (questionsContainerRef.current) {
+        useSearchResultStore.getState().setQuestionState({ scrollTop: questionsContainerRef.current.scrollTop });
+      }
+    };
+  }, []); // 仅在组件挂载/卸载时执行
 
   const handleItemClick = (type: 'posts' | 'questions', id: number | string) => {
     if (!id) return;
-    navigate(`/${type}/${id}`);
+    // 携带当前的完整搜索 URL
+    const currentSearchPath = window.location.pathname + window.location.search;
+    navigate(`/${type}/${id}`, { state: { fromUrl: currentSearchPath } });
   };
+   
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollTop = e.currentTarget.scrollTop;
@@ -136,24 +160,24 @@ export default function SearchPage() {
         <div className="flex w-[200vw] h-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]" 
              style={{ transform: activeTab === 'posts' ? 'translateX(0)' : 'translateX(-50%)' }}>
           
-          <div className="w-screen h-full overflow-y-auto pt-[105px] pb-10" onScroll={handleScroll}>
+          <div ref={postsContainerRef} className="w-screen h-full overflow-y-auto pt-[105px] pb-10" onScroll={handleScroll}>
             <InfiniteScroll onLoadMore={() => loadData('posts')} hasMore={postState.hasMore} isLoading={postState.loading}>
               <div className="space-y-1">
                 {postState.list.map((post) => (
-                  <div key={`post-${post.id}`} onClick={() => handleItemClick('posts', post.id)}>
-                    <PostsItem post={post} />
+                  <div key={`post-${post.id}`}>
+                    <PostsItem post={post} onClick={() => handleItemClick('posts', post.id)} />
                   </div>
                 ))}
               </div>
             </InfiniteScroll>
           </div>
 
-          <div className="w-screen h-full overflow-y-auto pt-[105px] pb-10" onScroll={handleScroll}>
+          <div ref={questionsContainerRef} className="w-screen h-full overflow-y-auto pt-[105px] pb-10" onScroll={handleScroll}>
             <InfiniteScroll onLoadMore={() => loadData('questions')} hasMore={questionState.hasMore} isLoading={questionState.loading}>
               <div className="space-y-1">
                 {questionState.list.map((q) => (
-                  <div key={`q-${q.id}`} onClick={() => handleItemClick('questions', q.id)}>
-                    <QuestionsItem question={q} />
+                  <div key={`q-${q.id}`}>
+                    <QuestionsItem question={q} onClick={() => handleItemClick('questions', q.id)} />
                   </div>
                 ))}
               </div>

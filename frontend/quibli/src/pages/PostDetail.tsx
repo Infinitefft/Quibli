@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getPostDetails, getPostComments } from '@/api/post'
+import { useSearchParams } from 'react-router-dom'
 import CommentSection from '@/components/CommentSection'
 import type { Post } from '@/types'
 
 export default function PostDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams();
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -30,6 +33,22 @@ export default function PostDetail() {
     fetchData()
   }, [id])
 
+  const handleBack = () => {
+    // 1. 优先检查是否有明确指定的来源 URL (比如带参数的搜索页)
+    if (location.state?.fromUrl) {
+      navigate(location.state.fromUrl);
+    } 
+    // 2. 如果没有明确来源，说明是普通跳转，直接回退一级
+    // 这样你在首页进来的，就会回到首页；个人中心进来的，就会回到个人中心
+    else if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } 
+    // 3. 实在没有历史了，才去首页保底
+    else {
+      navigate('/', { replace: true });
+    }
+  };
+
   if (loading) return <div className="max-w-2xl mx-auto p-20 text-center text-gray-300 tracking-widest text-xs">LOADING...</div>
   if (!post) return <div className="max-w-2xl mx-auto p-20 text-center text-gray-400 border border-dashed m-10">POST NOT FOUND</div>
 
@@ -38,7 +57,7 @@ export default function PostDetail() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-50 px-4">
         <div className="max-w-3xl mx-auto h-16 flex items-center">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="flex items-center gap-1 text-gray-900 hover:opacity-60 transition-opacity"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
