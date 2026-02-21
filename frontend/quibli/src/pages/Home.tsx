@@ -169,7 +169,7 @@ export default function Home() {
               placeholder="搜索你感兴趣的内容..."
               icon={<Search className="w-4 h-4 text-gray-400" />}
               className="bg-gray-100/80 border-transparent focus:bg-white focus:border-blue-200 focus:ring-2 focus:ring-blue-100 h-9 text-sm"
-              onClick={() => navigate('/search')}
+              onClick={() => navigate('/searchsuggestions')}
             />
           </div>
           

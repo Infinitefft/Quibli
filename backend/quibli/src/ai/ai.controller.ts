@@ -46,4 +46,19 @@ export class AIController {
     }
     return this.aiService.getSuggestions(keyword);
   }
+
+  @Get('search')
+  async search(
+    @Query('keyword') keyword: string,
+    @Query('type') type: 'post' | 'question' = 'post',
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ) {
+    // console.log("keyword, type, page, limit:", keyword, type, page, limit);
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const res = await this.aiService.search(keyword, type, pageNum, limitNum);
+    // console.log(res);
+    return res;
+  }
 }

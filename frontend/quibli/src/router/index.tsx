@@ -18,7 +18,6 @@ import MainLayout from '@/layouts/MainLayout';
 
 const Home = lazy(() => import('@/components/KeepAliveHome'));   // 拿到缓存的首页
 const Mine = lazy(() => import('@/pages/Mine'));
-const Search = lazy(() => import('@/pages/SearchSuggestions'));
 const Login = lazy(() => import('@/pages/Login'));
 const Chat = lazy(() => import('@/pages/Chat'));
 const Publish = lazy(() => import('@/pages/Publish'));
@@ -29,6 +28,8 @@ const PublishQuestions = lazy(() => import('@/pages/Publish/PublishQuestions'));
 const PublishPosts = lazy(() => import('@/pages/Publish/PublishPosts'));
 const QuestionDetail = lazy(() => import('@/pages/QuestionDetail'));
 const PostDetail = lazy(() => import('@/pages/PostDetail'));
+const SearchSuggestions = lazy(() => import('@/pages/SearchSuggestions'));
+const Search = lazy(() => import('@/pages/Search'));
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -38,12 +39,13 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/search" element={<Search />} />
             <Route path="/register" element={<Register />} />
             <Route path="/publish/questions" element={<PublishQuestions />} />
             <Route path="/publish/posts" element={<PublishPosts />} />
             <Route path="/questions/:id" element={<QuestionDetail />} />
             <Route path="/posts/:id" element={<PostDetail />} />
+            <Route path="/SearchSuggestions" element={<SearchSuggestions />} />
+            <Route path="/search" element={<Search />} />
 
             <Route path="/" element={<MainLayout />}>
               <Route path="" element={<Home />} />

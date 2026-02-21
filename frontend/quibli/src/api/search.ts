@@ -7,7 +7,7 @@ export const getSearchSuggestions = async (keyword: string) => {
 }
 
 
-export const Search = async (keyword: string, type: 'post' | 'question' = 'post', page: number = 1, limit: number = 10) => {
+export const SearchPostAndQuestion = async (keyword: string, type: 'post' | 'question' = 'post', page: number = 1, limit: number = 10) => {
   const res = await axios.get('/ai/search', {
     params: {
       keyword,
@@ -16,6 +16,7 @@ export const Search = async (keyword: string, type: 'post' | 'question' = 'post'
       limit,
     }
   })
+  console.log(res);
   return res;
 }
 

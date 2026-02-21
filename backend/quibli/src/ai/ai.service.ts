@@ -195,91 +195,93 @@ export class AIService {
 
   // 语义化搜索文章和问题
   async search(keyword: string, type: 'post' | 'question' = 'post', page: number = 1, limit: number = 10) {
-  if (!keyword || keyword.trim().length === 0) {
-    return type === 'post' ? { postItems: [] } : { questionItems: [] };
+    if (!keyword || keyword.trim().length === 0) return type === 'post' ? { postItems: [] } : { questionItems: [] };
+
+    const vector = await this.getEmbedding(keyword);
+    const vectorString = JSON.stringify(vector);
+    const skip = (page - 1) * limit;
+ 
+    try {
+      if (type === 'post') {
+        const posts: any[] = await this.prisma.$queryRaw`
+          SELECT 
+            p.id, p.title, p.content, p.created_at AS "createAt",
+            u.id AS "userId", u.nickname AS "userNickname", u.avatar AS "userAvatar",
+            (SELECT COUNT(*)::int FROM "user_like_posts" WHERE "postId" = p.id) AS "totalLikes",
+            (SELECT COUNT(*)::int FROM "user_favorite_posts" WHERE "postId" = p.id) AS "totalFavorites",
+            (SELECT COUNT(*)::int FROM "comments" WHERE "postId" = p.id) AS "totalComments",
+            ARRAY(
+              SELECT t.name FROM "tags" t 
+              JOIN "post_tags" pt ON pt."tagId" = t.id 
+              WHERE pt."postId" = p.id
+            ) AS tags
+          FROM "posts" p
+          LEFT JOIN "users" u ON p."userId" = u.id
+          WHERE p.embedding IS NOT NULL
+          ORDER BY p.embedding <=> ${vectorString}::vector ASC
+          LIMIT ${limit} OFFSET ${skip}
+        `;
+
+        return {
+          postItems: posts.map((post) => ({
+            id: post.id,
+            title: post.title,
+            publishedAt: post.createAt ? new Date(post.createAt).toISOString() : '',
+            totalLikes: post.totalLikes || 0,
+            totalFavorites: post.totalFavorites || 0,
+            totalComments: post.totalComments || 0,
+            user: {
+              id: post.userId || '',
+              phone: post.userPhone || '',
+              nickname: post.userNickname || '',
+              avatar: post.userAvatar || '',
+            },
+            content: post.content || '',
+            tags: post.tags || [],
+          }))
+        };
+      } else {
+        // Questions 逻辑同理，注意表名和字段
+        const questions: any[] = await this.prisma.$queryRaw`
+          SELECT 
+            q.id, q.title, q.created_at AS "createAt",
+            u.id AS "userId",u.nickname AS "userNickname", u.avatar AS "userAvatar",
+            (SELECT COUNT(*)::int FROM "user_like_questions" WHERE "questionId" = q.id) AS "totalLikes",
+            (SELECT COUNT(*)::int FROM "user_favorite_questions" WHERE "questionId" = q.id) AS "totalFavorites",
+            (SELECT COUNT(*)::int FROM "comments" WHERE "questionId" = q.id) AS "totalAnswers",
+            ARRAY(
+              SELECT t.name FROM "tags" t 
+              JOIN "question_tags" qt ON qt."tagId" = t.id 
+              WHERE qt."questionId" = q.id
+            ) AS tags
+          FROM "questions" q
+          LEFT JOIN "users" u ON q."userId" = u.id
+          WHERE q.embedding IS NOT NULL
+          ORDER BY q.embedding <=> ${vectorString}::vector ASC
+          LIMIT ${limit} OFFSET ${skip}
+        `;
+
+        return {
+          questionItems: questions.map((q) => ({
+            id: q.id,
+            title: q.title,
+            tags: q.tags || [],
+            publishedAt: q.createAt ? new Date(q.createAt).toISOString() : '',
+            totalAnswers: q.totalAnswers || 0,
+            totalLikes: q.totalLikes || 0,
+            totalFavorites: q.totalFavorites || 0,
+            user: {
+              id: q.userId || '',
+              phone: q.userPhone || '',
+              nickname: q.userNickname || '',
+              avatar: q.userAvatar || '',
+            }
+          }))
+        };
+      }
+    } catch (error) {
+      console.error('SQL Execution Error:', error);
+      return type === 'post' ? { postItems: [] } : { questionItems: [] };
+    }
   }
-
-  const vector = await this.getEmbedding(keyword);
-  const vectorString = JSON.stringify(vector);
-  const skip = (page - 1) * limit;
-
-  if (type === 'post') {
-    const posts: any[] = await this.prisma.$queryRaw`
-      SELECT 
-        p.id, p.title, p.content, p."createAt",
-        u.id AS "userId", u.phone AS "userPhone", u.nickname AS "userNickname", u.avatar AS "userAvatar",
-        (SELECT COUNT(*)::int FROM "PostLike" WHERE "postId" = p.id) AS "totalLikes",
-        (SELECT COUNT(*)::int FROM "PostFavorite" WHERE "postId" = p.id) AS "totalFavorites",
-        (SELECT COUNT(*)::int FROM "PostComment" WHERE "postId" = p.id) AS "totalComments",
-        ARRAY(
-          SELECT t.name 
-          FROM "Tag" t 
-          JOIN "_PostToTag" pt ON pt."B" = t.id 
-          WHERE pt."A" = p.id
-        ) AS tags
-      FROM posts p
-      LEFT JOIN users u ON p."userId" = u.id
-      WHERE p.embedding IS NOT NULL
-      ORDER BY p.embedding <=> ${vectorString}::vector ASC
-      LIMIT ${limit} OFFSET ${skip}
-    `;
-
-    const postItems = posts.map((post) => ({
-      id: post.id,
-      title: post.title,
-      publishedAt: post.createAt?.toISOString() ?? '',
-      totalLikes: post.totalLikes,
-      totalFavorites: post.totalFavorites,
-      totalComments: post.totalComments,
-      user: {
-        id: post.userId ?? '',
-        phone: post.userPhone ?? '',
-        nickname: post.userNickname ?? '',
-        avatar: post.userAvatar ?? '',
-      },
-      content: post.content ?? '',
-      tags: post.tags,
-    }));
-
-    return { postItems };
-  } else {
-    const questions: any[] = await this.prisma.$queryRaw`
-      SELECT 
-        q.id, q.title, q."createAt",
-        u.id AS "userId", u.phone AS "userPhone", u.nickname AS "userNickname", u.avatar AS "userAvatar",
-        (SELECT COUNT(*)::int FROM "QuestionLike" WHERE "questionId" = q.id) AS "totalLikes",
-        (SELECT COUNT(*)::int FROM "QuestionFavorite" WHERE "questionId" = q.id) AS "totalFavorites",
-        (SELECT COUNT(*)::int FROM "QuestionComment" WHERE "questionId" = q.id) AS "totalAnswers",
-        ARRAY(
-          SELECT t.name 
-          FROM "Tag" t 
-          JOIN "_QuestionToTag" qt ON qt."B" = t.id 
-          WHERE qt."A" = q.id
-        ) AS tags
-      FROM questions q
-      LEFT JOIN users u ON q."userId" = u.id
-      WHERE q.embedding IS NOT NULL
-      ORDER BY q.embedding <=> ${vectorString}::vector ASC
-      LIMIT ${limit} OFFSET ${skip}
-    `;
-
-    const questionItems = questions.map((question) => ({
-      id: question.id,
-      title: question.title,
-      tags: question.tags,
-      publishedAt: question.createAt?.toISOString() ?? '',
-      totalAnswers: question.totalAnswers,
-      totalLikes: question.totalLikes,
-      totalFavorites: question.totalFavorites,
-      user: {
-        id: question.userId ?? '',
-        phone: question.userPhone ?? '',
-        nickname: question.userNickname ?? '',
-        avatar: question.userAvatar ?? '',
-      },
-    }));
-
-    return { questionItems };
-  }
-}
 }
