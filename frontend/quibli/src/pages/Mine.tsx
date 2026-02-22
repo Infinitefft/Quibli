@@ -182,7 +182,7 @@ export default function Mine() {
             title="我的收藏" 
             iconColor="text-amber-500"
             iconBg="bg-amber-50"
-            onClick={() => console.log('Favorites')} 
+            onClick={() => navigate('/minefavorites')}
           />
 
           <MenuRow 
@@ -190,7 +190,7 @@ export default function Mine() {
             title="我的点赞" 
             iconColor="text-rose-500"
             iconBg="bg-rose-50"
-            onClick={() => console.log('Likes')} 
+            onClick={() => navigate('/minelikes')}
           />
 
           <MenuRow 

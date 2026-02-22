@@ -43,3 +43,49 @@ export const toggleFavoritePost = async (postId: number) => {
 export const toggleFavoriteQuestion = async (questionId: number) => {
   return await axios.post('/user/favorite-question', { questionId });
 };
+
+
+export const getMyFavoritePosts = async (userId: number, page: number, limit: number) => {
+  const res = await axios.get('/user/getFavoritePosts', {
+    params: {
+      userId,
+      page,
+      limit,
+    }
+  })
+  return res;
+}
+
+export const getMyFavoriteQuestions = async (userId: number, page: number, limit: number) => {
+  const res = await axios.get('/user/getFavoriteQuestions', {
+    params: {
+      userId,
+      page,
+      limit,
+    }
+  })
+  return res;
+}
+
+
+export const getMyLikePosts = async (userId: number, page: number, limit: number) => {
+  const res = await axios.get('/user/getLikePosts', {
+    params: {
+      userId,
+      page,
+      limit,
+    }
+  })
+  return res;
+}
+
+export const getMyLikeQuestions = async (userId: number, page: number, limit: number) => {
+  const res = await axios.get('/user/getLikeQuestions', {
+    params: {
+      userId,
+      page,
+      limit,
+    }
+  })
+  return res;
+}

@@ -30,6 +30,9 @@ const QuestionDetail = lazy(() => import('@/components/QuestionDetail'));
 const PostDetail = lazy(() => import('@/components/PostDetail'));
 const SearchSuggestions = lazy(() => import('@/pages/SearchSuggestions'));
 const Search = lazy(() => import('@/pages/Search'));
+const MineFavorites = lazy(() => import('@/pages/MineFavorites'));
+const MineLikes = lazy(() => import('@/pages/MineLikes'));
+
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -46,6 +49,8 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/posts/:id" element={<PostDetail />} />
             <Route path="/searchsuggestions" element={<SearchSuggestions />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/minefavorites" element={<MineFavorites />} />
+            <Route path="/minelikes" element={<MineLikes />} />
 
             <Route path="/" element={<MainLayout />}>
               <Route path="" element={<Home />} />

@@ -12,10 +12,8 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isPulling = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // 阈值：下拉多少像素触发刷新
+
   const THRESHOLD = 70;
-  // 最大下拉距离
   const MAX_PULL = 120;
 
   const getScrollTop = useCallback(() => {
@@ -23,9 +21,10 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
   }, [scrollableElementRef]);
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    // 只有当页面滚动在顶部时才记录起点
     if (isRefreshing) return;
-    if (getScrollTop() === 0) {
+    
+    // 只有在滚动条位于顶部时，才允许启动下拉逻辑
+    if (getScrollTop() <= 0) {
       setStartY(e.touches[0].clientY);
       isPulling.current = true;
     } else {
@@ -34,32 +33,39 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
   };
 
   const handleTouchMove = useCallback((e: globalThis.TouchEvent) => {
-    // 如果不在顶部或者正在刷新，不处理
     if (!isPulling.current || isRefreshing) return;
+
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY;
+    const scrollTop = getScrollTop();
 
-    if (getScrollTop() > 5) { // Add a small tolerance
+    // 如果用户在下拉过程中页面发生了滚动（不在顶部了），立即终止下拉逻辑
+    if (scrollTop > 0) {
       isPulling.current = false;
-      setTranslateY(0);
+      if (translateY !== 0) setTranslateY(0);
       return;
     }
 
-    // 只有向下拉动才处理
+    // 关键修复点：只有在下拉 (diff > 0) 且处于顶部时才处理
     if (diff > 0) {
-      e.preventDefault(); // Prevent parent scroll, now safe to call
-      // 增加阻尼感 (diff * 0.4)
+      // 只有事件可取消时才调用 preventDefault，避免浏览器 Intervention 警告
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      
       const pullDistance = Math.min(diff * 0.4, MAX_PULL);
       setTranslateY(pullDistance);
     } else {
-      setTranslateY(0);
+      // 如果是向上滑动，重置状态
+      if (translateY !== 0) setTranslateY(0);
     }
-  }, [isRefreshing, startY, getScrollTop]);
+  }, [isRefreshing, startY, getScrollTop, translateY]);
 
   useEffect(() => {
     const element = containerRef.current;
     if (!element) return;
 
+    // 显式绑定非 passive 事件，以便能够成功调用 preventDefault
     const handleMove = (e: globalThis.TouchEvent) => {
       handleTouchMove(e);
     };
@@ -76,14 +82,12 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
     isPulling.current = false;
 
     if (translateY > THRESHOLD) {
-      // 触发刷新
       setIsRefreshing(true);
-      setTranslateY(THRESHOLD); // 停留在加载位置
+      setTranslateY(THRESHOLD);
 
       try {
         await onRefresh();
       } finally {
-        // 刷新完成，延时收起
         setTimeout(() => {
           setIsRefreshing(false);
           setTranslateY(0);
@@ -91,7 +95,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
         }, 500);
       }
     } else {
-      // 未达到阈值，回弹
       setTranslateY(0);
       setStartY(0);
     }
@@ -104,13 +107,15 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
       onTouchEnd={handleTouchEnd}
       style={{
         position: 'relative',
-        backgroundColor: 'inherit', 
-        touchAction: 'pan-y',
-        transform: `translateY(${translateY}px)`,
+        backgroundColor: 'inherit',
+        // 动态 touchAction：下拉时设为 none 以锁定浏览器默认行为
+        touchAction: translateY > 0 ? 'none' : 'pan-y',
+        // 使用 translate3d 开启 GPU 加速
+        transform: `translate3d(0, ${translateY}px, 0)`,
         transition: isRefreshing ? 'transform 0.2s' : 'transform 0.3s ease-out',
+        willChange: 'transform'
       }}
     >
-      {/* 下拉加载指示器 */}
       <div
         style={{
           position: 'absolute',
@@ -133,13 +138,16 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
             animation: 'spin 1s linear infinite'
           }} />
         ) : (
-          <span style={{ color: '#888', fontSize: '14px', opacity: translateY / THRESHOLD }}>
+          <span style={{ 
+            color: '#888', 
+            fontSize: '14px', 
+            opacity: Math.min(translateY / THRESHOLD, 1) 
+          }}>
             {translateY > THRESHOLD ? '释放刷新' : '下拉刷新'}
           </span>
         )}
       </div>
 
-      {/* 注入简单的动画样式 */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -147,7 +155,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
         }
       `}</style>
 
-      {/* 内容区域 */}
       {children}
     </div>
   );
