@@ -9,6 +9,7 @@ interface SearchSuggestionsState {
   history: string[];
   searchSuggestions: (keyword: string) => Promise<void>;
   addHistory: (keyword: string) => void;
+  delete: (id: number) => void;
   clearHistory: () => void;
 }
 
@@ -50,7 +51,19 @@ export const useSearchSuggestionsStore = create<SearchSuggestionsState>()(
       // 已经存在的话，就把它放到最前面
       let newHistory = exists ? [trimedKeyword, ...history.filter((val) => val !== trimedKeyword)]
        : [trimedKeyword, ...history];
+
+      // 保留最新的 15 条
+      if (newHistory.length > 15) {
+        newHistory = newHistory.slice(0, 15);
+      }
+      
       set({ history: newHistory });
+    },
+    delete: (id: number) => {
+      const { history } = get();
+      set({
+        history: history.filter((_, index) => index !== id)
+      })
     },
     clearHistory: () => {
       set({ history: [] });

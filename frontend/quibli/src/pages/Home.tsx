@@ -5,10 +5,8 @@ import { Search } from 'lucide-react';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { refreshHomePosts, refreshHomeQuestions } from '@/store/homeRefresh';
-
 import PostsItem from '@/pages/PostsItem';
 import useHomePostStore from '@/store/homePost';
-
 import useHomeQuestionStore from '@/store/homeQuestion';
 import QuestionsItem from '@/pages/QuestionsItem';
 import { useUserStore } from '@/store/user';
@@ -21,44 +19,33 @@ export default function Home() {
   
   const [activeTab, setActiveTab] = useState<'posts' | 'questions'>('posts');
 
-  // Animation Refs
   const headerRef = useRef<HTMLElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const questionsContainerRef = useRef<HTMLDivElement>(null);
 
-  // State trackers for animation (using refs to avoid re-renders during scroll)
   const lastScrollY = useRef(0);
   const currentTranslateY = useRef(0);
 
-  // Helper to update DOM directly
   const updateHeader = (translate: number) => {
     currentTranslateY.current = translate;
     
     if (headerRef.current) {
-      // Use translate3d for hardware acceleration
       headerRef.current.style.transform = `translate3d(0, ${translate}px, 0)`;
     }
     
     if (searchBarRef.current) {
-      // Fade out the search bar. 
-      // Fully visible at 0px, fully transparent at -40px (accelerated fade)
       const opacity = Math.max(0, 1 - (Math.abs(translate) / 40));
       searchBarRef.current.style.opacity = opacity.toString();
-      // Disable pointer events when invisible to prevent phantom clicks
       searchBarRef.current.style.pointerEvents = opacity < 0.1 ? 'none' : 'auto';
     }
   };
 
-  // Sync scroll state when switching tabs
   useEffect(() => {
     const container = activeTab === 'posts' ? postsContainerRef.current : questionsContainerRef.current;
     if (container) {
-      // Reset lastScrollY to the current container's position to avoid jump
       lastScrollY.current = container.scrollTop;
 
-      // If the new tab is at the top, force show the header
-      // Otherwise, keep the current header state (or we could force hide if deep down)
       if (container.scrollTop < 10) {
         updateHeader(0);
       }
@@ -68,39 +55,30 @@ export default function Home() {
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollTop = e.currentTarget.scrollTop;
     
-    // Ignore negative scroll (iOS rubber banding)
     if (scrollTop < 0) return;
 
     const deltaY = scrollTop - lastScrollY.current;
     lastScrollY.current = scrollTop;
 
-    // Calculate new translation based on delta
-    // Scroll Down (delta > 0) -> Subtract delta (Move towards -57)
-    // Scroll Up (delta < 0) -> Subtract delta (Move towards 0)
     let newTranslate = currentTranslateY.current - deltaY;
 
-    // Clamp between -57 (hidden height) and 0 (fully visible)
     newTranslate = Math.max(-57, Math.min(0, newTranslate));
 
-    // Safety: If at the very top, always show fully
     if (scrollTop <= 0) {
       newTranslate = 0;
     }
 
-    // Apply update only if value changed
     if (newTranslate !== currentTranslateY.current) {
       updateHeader(newTranslate);
     }
   };
 
-  // Initial Data Load
   useEffect(() => {
     if (posts.length === 0) loadMorePosts();
     if (questions.length === 0) loadMoreQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Swipe handling
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
@@ -129,7 +107,6 @@ export default function Home() {
     touchEndX.current = null;
   };
 
-  // 新增：下拉刷新处理函数
   const handleRefresh = async () => {
     if (activeTab === 'posts') {
       await refreshHomePosts();
@@ -150,16 +127,10 @@ export default function Home() {
         }
       `}</style>
       
-      {/* 
-        Header Container 
-        - Removed CSS transition classes (duration-500, ease-in-out) to allow direct JS control without lag
-        - Retained will-change-transform for browser optimization
-      */}
       <header 
         ref={headerRef}
         className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-[0_1px_2px_rgba(0,0,0,0.03)] will-change-transform"
       >
-        {/* Part 1: Search Bar Row (Height 57px) */}
         <div 
           ref={searchBarRef}
           className="h-[57px] px-4 py-3 flex items-center space-x-3 border-b border-gray-100/50 box-border"
@@ -173,7 +144,6 @@ export default function Home() {
             />
           </div>
           
-          {/* User Avatar Section */}
           <button 
             className="group relative flex-shrink-0 active:scale-95 transition-transform duration-200 ml-1"
             onClick={() => navigate('/mine')}
@@ -194,7 +164,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Part 2: Tab Bar Row (Height 48px) */}
         <div className="h-[48px] flex items-center justify-center relative bg-white/0 box-border border-b border-gray-100">
           <button 
             onClick={() => setActiveTab('posts')}
@@ -224,7 +193,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main 
         className="flex-1 relative w-full h-full overflow-hidden"
         onTouchStart={handleTouchStart}
@@ -235,7 +203,6 @@ export default function Home() {
           className="flex w-[200vw] h-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform"
           style={{ transform: activeTab === 'posts' ? 'translateX(0)' : 'translateX(-50%)' }}
         >
-          {/* Posts List */}
           <div 
             ref={postsContainerRef}
             className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[105px] pb-24"
@@ -248,15 +215,14 @@ export default function Home() {
                 isLoading={loadingPosts}
               >
                 <div className="pb-4 bg-gray-50">
-                  {posts.map((post) => (
-                    <PostsItem key={post.id} post={post} />
+                  {posts.map((post, index) => (
+                    <PostsItem key={`${post.id}-${index}`} post={post} />
                   ))}
                 </div>
               </InfiniteScroll>
             </PullToRefresh>
           </div>
 
-          {/* Questions List */}
           <div 
             ref={questionsContainerRef}
             className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[105px] pb-24"
@@ -269,8 +235,8 @@ export default function Home() {
                 isLoading={loadingQuestions}
               >
                 <div className="pb-4 bg-gray-50">
-                  {questions.map((question) => (
-                    <QuestionsItem key={question.id} question={question} />
+                  {questions.map((question, index) => (
+                    <QuestionsItem key={`${question.id}-${index}`} question={question} />
                   ))}
                 </div>
               </InfiniteScroll>
