@@ -3,6 +3,11 @@ export interface User {
   phone: string;
   nickname: string;
   avatar?: string;
+  
+  // 使用可选属性
+  following?: number[];       
+  likedPosts?: number[];      
+  collectPosts?: number[];    
 }
 
 

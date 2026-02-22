@@ -1,62 +1,106 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUserStore } from '@/store/user';
 
 interface UserItemProps {
   user: any;
-  extra?: React.ReactNode; // 预留右侧区域，比如放“关注”按钮或“时间”
-  onClick?: () => void;    // 支持自定义点击事件
+  extra?: React.ReactNode;
+  onClick?: () => void;
 }
 
-export default function UserItem({ user, extra, onClick }: UserItemProps) {
+const UserItem: React.FC<UserItemProps> = ({ user, extra, onClick }) => {
   const navigate = useNavigate();
+  
+  // 1. 从 Store 中获取登录状态和 follow 方法
+  const isLogin = useUserStore((state: any) => state.isLogin);
+  const follow = useUserStore((state: any) => state.follow);
 
-  const defaultClick = () => {
+  // 2. 核心进阶：直接根据 Store 里的 following 数组判断状态
+  // 这样就不需要本地的 useState 了，状态全站同步
+  const isFollowed = useUserStore((state: any) => 
+    state.user?.following?.includes(user.id)
+  );
+
+  const handleDefaultClick = () => {
     if (onClick) return onClick();
     navigate(`/user/${user.id}`);
   };
 
+  const handleFollow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!isLogin) {
+      navigate('/login');
+      return;
+    }
+    // 3. 直接调用 Store 里的 follow 逻辑（逻辑已经在 useStore 里实现了）
+    follow(user.id);
+  };
+
   const formatCount = (num: number) => {
-    return num >= 10000 ? (num / 10000).toFixed(1) + 'w' : (num || 0);
+    if (!num) return '0';
+    return num >= 10000 ? (num / 10000).toFixed(1) + 'w' : num;
   };
 
   return (
-    <div 
-      className="bg-white rounded-xl p-4 flex items-center active:bg-gray-50 active:scale-[0.98] transition-all cursor-pointer shadow-sm border border-gray-50"
-      onClick={defaultClick}
-    >
-      {/* 头像 */}
-      <div className="w-12 h-12 rounded-full bg-blue-50 flex-shrink-0 overflow-hidden border border-gray-100">
-        {user.avatar ? (
-          <img src={user.avatar} alt={user.nickname} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-blue-400 text-lg font-bold">
-            {user.nickname?.charAt(0)}
+    <div className="w-full select-none">
+      <div 
+        onClick={handleDefaultClick}
+        className="w-full flex items-center justify-between px-2 py-4 active:bg-black/[0.02] cursor-pointer"
+      >
+        <div className="flex items-center space-x-3 overflow-hidden flex-1">
+          {/* 头像 */}
+          <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-[#3B82F6]">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.nickname} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white text-xl font-bold">
+                {user.nickname?.[0]?.toUpperCase()}
+              </span>
+            )}
           </div>
-        )}
+
+          <div className="flex flex-col space-y-0.5 overflow-hidden">
+            <span className="text-[17px] text-gray-950 font-bold truncate">
+              {user.nickname}
+            </span>
+            
+            <div className="flex items-center text-[13px] text-gray-600 font-medium">
+              <span>{formatCount(user._count?.followedBy)} 粉丝</span>
+              <span className="mx-2 text-gray-200">|</span>
+              <span>{formatCount(user._count?.posts)} 作品</span>
+            </div>
+
+            <div className="text-[11px] text-gray-400 font-mono scale-90 origin-left">
+              UID: {user.id}
+            </div>
+          </div>
+        </div>
+
+        {/* 关注按钮：直接监听全局状态 isFollowed */}
+        <div className="relative z-10 flex-shrink-0 ml-4">
+          {extra || (
+            <button 
+              onClick={handleFollow}
+              className={`
+                h-9 px-6 text-[14px] font-black tracking-tight rounded-full select-none min-w-[90px] flex items-center justify-center
+                ${isFollowed 
+                  ? 'bg-gray-100 text-gray-500 border-none' 
+                  : 'bg-transparent border-[1.5px] border-gray-950 text-gray-950'
+                }
+              `}
+            >
+              {isFollowed ? '已关注' : '+ 关注'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* 信息区 */}
-      <div className="ml-3 flex-1 min-w-0">
-        <div className="flex items-center justify-between">
-          <div className="text-[16px] font-semibold text-gray-900 truncate">
-            {user.nickname}
-          </div>
-          {/* 这里可以放 UID 或者传入的 extra */}
-          {!extra && <span className="text-[11px] text-gray-400">UID: {user.id}</span>}
-        </div>
-        
-        <div className="text-[13px] text-gray-500 line-clamp-1 mt-0.5">
-          {user.bio || '暂无简介'}
-        </div>
-
-        <div className="flex items-center mt-1 text-[12px] text-gray-400 space-x-3">
-          <span>粉丝 {formatCount(user._count?.followedBy)}</span>
-          <span>作品 {formatCount(user._count?.posts)}</span>
-        </div>
+      <div className="px-2">
+        <div className="h-[0.5px] w-full bg-gray-200" />
       </div>
-
-      {/* 侧边扩展区 */}
-      {extra && <div className="ml-2">{extra}</div>}
     </div>
   );
-}
+};
+
+export default React.memo(UserItem);

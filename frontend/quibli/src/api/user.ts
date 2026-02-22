@@ -16,3 +16,10 @@ export const doRegister = async (registerData: RegisterCredentil) => {
   // console.log("user.ts:res:", res);
   return res;
 }
+
+
+export const followUser = async (targetFollowId: number) => {
+  await axios.post('/user/follow', {
+    targetFollowId
+  });
+}

@@ -4,9 +4,8 @@ import { persist } from 'zustand/middleware';
 
 import type { User } from '@/types/index';
 import type { Credential } from '@/types/index';
-import { doLogin } from '@/api/user';
+import { doLogin, doRegister, followUser } from '@/api/user';
 import type { RegisterCredentil } from '@/types/index';
-import { doRegister } from '@/api/user';
 
 
 
@@ -18,6 +17,7 @@ interface UserStore {
   login: (credentials: Credential) => void;
   register: (credentials: RegisterCredentil) => void;
   logout: () => void;
+  follow: (userId: number) => Promise<void>
 }
 
 export const useUserStore = create<UserStore>() (
@@ -28,10 +28,15 @@ export const useUserStore = create<UserStore>() (
     refreshToken: null,
     login: async (credentials) => { 
       const { phone, password } = credentials;
-      const res = await doLogin({ phone, password });
-      // console.log("Login.tsx: res:", res);
+      const res: any = await doLogin({ phone, password });
+      // console.log("Login.tsx: res:", res.user);
       set({
-        user: res.user,
+        user: {
+          ...res.user,
+          following: res.user.following || [],
+          likedPosts: res.user.likedPosts || [],
+          collectPosts: res.user.collectPosts || [],
+        },
         accessToken: res.access_token,
         refreshToken: res.refresh_token,
         isLogin: true,
@@ -39,8 +44,9 @@ export const useUserStore = create<UserStore>() (
     },
     register: async (credentials) => {
       const { phone, nickname, password } = credentials;
-      const res = await doRegister({ phone, nickname, password });
-      console.log("Register.tsx: res:", res);
+      // const res = await doRegister({ phone, nickname, password });
+      await doRegister({ phone, nickname, password });
+      // console.log("Register.tsx: res:", res);
     },
     logout: () => {
       set({
@@ -49,7 +55,35 @@ export const useUserStore = create<UserStore>() (
         refreshToken: null,
         isLogin: false,
       })
-    }
+    },
+    // 乐观更新关注列表
+    follow: async (targetFollowId: number) => {
+      const { user } = get();
+      if (!user) return;
+
+      // 1. 这里的 || [] 就是为了兼容那些没有这些字段的旧 User 数据
+      const oldFollowing = user.following || [];
+      const isFollowed = oldFollowing.includes(targetFollowId);
+
+      // 2. 乐观更新
+      const newFollowing = isFollowed   // 如果已关注
+        ? oldFollowing.filter(id => id !== targetFollowId)  // 取消关注
+        : [...oldFollowing, targetFollowId];  // 否则添加到关注列表
+
+      // 更新 Store
+      set({ 
+        user: { 
+          ...user, 
+          following: newFollowing 
+        } 
+      });
+      try {
+        await followUser(targetFollowId);
+      } catch (error) {
+        // 失败回滚
+        set({ user: { ...user, following: oldFollowing } });
+      }
+    },
   }),
   {
     name: 'quibli-user-store',

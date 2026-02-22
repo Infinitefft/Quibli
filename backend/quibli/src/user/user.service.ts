@@ -111,4 +111,59 @@ export class UsersService {
       },
     };
   }
+
+
+  async follow(currentUserId: any, targetUserId: any) {
+    // 强制转为数字，解决 "1" 导致的 Prisma 校验失败
+    const followerId = parseInt(currentUserId);
+    const followingId = parseInt(targetUserId);
+
+    // 校验转换结果，防止出现 NaN
+    if (isNaN(followerId) || isNaN(followingId)) {
+      throw new Error("Invalid User ID provided");
+    }
+
+    if (followerId === followingId) {
+      throw new Error("You cannot follow yourself");
+    }
+
+    // 检查目标用户是否存在
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: followingId }
+    });
+    
+    if (!targetUser) {
+      throw new Error("Target user not found");
+    }
+
+    // 查找并切换关注状态
+    const existingFollow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: followerId,
+          followingId: followingId,
+        },
+      },
+    });
+
+    if (existingFollow) {
+      await this.prisma.follow.delete({
+        where: {
+          followerId_followingId: {
+            followerId: followerId,
+            followingId: followingId,
+          },
+        },
+      });
+      return { followed: false };
+    } else {
+      await this.prisma.follow.create({
+        data: {
+          followerId: followerId,
+          followingId: followingId,
+        },
+      });
+      return { followed: true };
+    }
+  }
 }
