@@ -4,10 +4,16 @@ export interface User {
   nickname: string;
   avatar?: string;
   
-  // 使用可选属性
-  following?: number[];       
-  likedPosts?: number[];      
-  collectPosts?: number[];    
+  // 关注
+  following?: number[];   // 我关注的人的 ID 列表
+
+  // 文章
+  likePosts?: number[];   // 点赞的文章 ID 列表
+  favoritePosts?: number[];  // 收藏的文章 ID 列表
+
+  // 问题交互
+  likeQuestions?: number[];  // 点赞的问题 ID 列表
+  favoriteQuestions?: number[];  // 收藏的问题 ID 列表
 }
 
 

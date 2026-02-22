@@ -1,11 +1,17 @@
 import { create } from "zustand";
 import { persist } from 'zustand/middleware';
 
+import type { User, Credential, RegisterCredentil } from '@/types/index';
 
-import type { User } from '@/types/index';
-import type { Credential } from '@/types/index';
-import { doLogin, doRegister, followUser } from '@/api/user';
-import type { RegisterCredentil } from '@/types/index';
+import { 
+  doLogin, 
+  doRegister, 
+  followUser, 
+  toggleLikePost, 
+  toggleLikeQuestion, 
+  toggleFavoritePost, 
+  toggleFavoriteQuestion 
+} from '@/api/user';
 
 
 
@@ -82,6 +88,85 @@ export const useUserStore = create<UserStore>() (
       } catch (error) {
         // 失败回滚
         set({ user: { ...user, following: oldFollowing } });
+      }
+    },
+    // 乐观更新点赞文章
+    likePost: async (postId: number) => {
+      const { user } = get();
+      if (!user) return;
+
+      // 1. 获取当前状态
+      const oldLikes = user.likePosts || [];
+      const isLiked = oldLikes.includes(postId);
+
+      // 2. 计算新状态：已点赞则过滤掉，未点赞则添加
+      const newLikes = isLiked 
+        ? oldLikes.filter(id => id !== postId) 
+        : [...oldLikes, postId];
+
+      set({ user: { ...user, likePosts: newLikes } });
+      try {
+        await toggleLikePost(postId);
+      } catch (error) {
+        // 失败回滚
+        set({ user: { ...user, likePosts: oldLikes } });
+      }
+    },
+    // 乐观更新点赞问题
+    likeQuestion: async (questionId: number) => {
+      const { user } = get();
+      if (!user) return;
+
+      const oldLikes = user.likeQuestions || [];
+      const isLiked = oldLikes.includes(questionId);
+
+      const newLikes = isLiked 
+        ? oldLikes.filter(id => id !== questionId) 
+        : [...oldLikes, questionId];
+
+      set({ user: { ...user, likeQuestions: newLikes } });
+      try {
+        await toggleLikeQuestion(questionId);
+      } catch (error) {
+        set({ user: { ...user, likeQuestions: oldLikes } });
+      }
+    },
+    // 乐观更新收藏文章
+    favoritePost: async (postId: number) => {
+      const { user } = get();
+      if (!user) return;
+
+      const oldFavs = user.favoritePosts || [];
+      const isFav = oldFavs.includes(postId);
+
+      const newFavs = isFav 
+        ? oldFavs.filter(id => id !== postId) 
+        : [...oldFavs, postId];
+
+      set({ user: { ...user, favoritePosts: newFavs } });
+      try {
+        await toggleFavoritePost(postId);
+      } catch (error) {
+        set({ user: { ...user, favoritePosts: oldFavs } });
+      }
+    },
+    // 乐观更新收藏问题
+    favoriteQuestion: async (questionId: number) => {
+      const { user } = get();
+      if (!user) return;
+
+      const oldFavs = user.favoriteQuestions || [];
+      const isFav = oldFavs.includes(questionId);
+
+      const newFavs = isFav 
+        ? oldFavs.filter(id => id !== questionId) 
+        : [...oldFavs, questionId];
+
+      set({ user: { ...user, favoriteQuestions: newFavs } });
+      try {
+        await toggleFavoriteQuestion(questionId);
+      } catch (error) {
+        set({ user: { ...user, favoriteQuestions: oldFavs } });
       }
     },
   }),
