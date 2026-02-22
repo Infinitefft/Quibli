@@ -4,6 +4,7 @@ import { getQuestionDetails, getQuestionComments } from '@/api/question'
 import CommentSection from '@/components/CommentSection';
 import { useSearchParams } from 'react-router-dom';
 import type { Question } from '@/types'
+import { useUserStore } from '@/store/user' // 1. 引入 store
 
 export default function QuestionDetail() {
   const { id } = useParams()
@@ -13,6 +14,15 @@ export default function QuestionDetail() {
   const [question, setQuestion] = useState<Question | null>(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // 2. 注入 Store 状态与方法
+  const { user, isLogin, likeQuestion, favoriteQuestion, follow } = useUserStore()
+
+  // 3. 判定状态：点赞、收藏、是否为本人、是否已关注
+  const isLiked = user?.likeQuestions?.includes(Number(id))
+  const isFavorited = user?.favoriteQuestions?.includes(Number(id))
+  const isFollowed = user?.following?.includes(question?.user.id || 0)
+  const isSelf = user?.id === question?.user.id
 
   useEffect(() => {
     if (!id) return
@@ -34,20 +44,33 @@ export default function QuestionDetail() {
   }, [id])
 
   const handleBack = () => {
-  // 1. 优先检查是否有明确指定的来源 URL (比如带参数的搜索页)
     if (location.state?.fromUrl) {
       navigate(location.state.fromUrl);
     } 
-    // 2. 如果没有明确来源，说明是普通跳转，直接回退一级
-    // 这样你在首页进来的，就会回到首页；个人中心进来的，就会回到个人中心
     else if (window.history.state && window.history.state.idx > 0) {
       navigate(-1);
     } 
-    // 3. 实在没有历史了，才去首页保底
     else {
       navigate('/', { replace: true });
     }
   };
+
+  // 4. 交互处理函数
+  const onLike = async () => {
+    if (!isLogin) return navigate('/login')
+    await likeQuestion(Number(id))
+  }
+
+  const onFavorite = async () => {
+    if (!isLogin) return navigate('/login')
+    await favoriteQuestion(Number(id))
+  }
+
+  const handleFollow = async () => {
+    if (!isLogin) return navigate('/login')
+    if (isSelf || !question) return
+    await follow(question.user.id)
+  }
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
@@ -87,9 +110,19 @@ export default function QuestionDetail() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2.5">
                 <span className="text-sm font-bold text-gray-900">{question.user.nickname}</span>
-                <button className="px-2.5 py-0.5 border border-blue-500 text-blue-500 rounded-full text-[10px] font-bold hover:bg-blue-50 transition-colors">
-                  + 关注
-                </button>
+                {/* 关注按钮逻辑 */}
+                {!isSelf && (
+                  <button 
+                    onClick={handleFollow}
+                    className={`px-2.5 py-0.5 border rounded-full text-[10px] font-bold transition-colors ${
+                      isFollowed 
+                        ? 'border-gray-200 text-gray-400' 
+                        : 'border-blue-500 text-blue-500 hover:bg-blue-50'
+                    }`}
+                  >
+                    {isFollowed ? '已关注' : '+ 关注'}
+                  </button>
+                )}
               </div>
               <span className="text-[11px] text-gray-400 mt-0.5">
                 提问于 {new Date(question.publishedAt).toLocaleDateString()}
@@ -112,10 +145,14 @@ export default function QuestionDetail() {
 
         <div className="flex items-center gap-6 border-y border-gray-50 py-3 mb-10 text-[13px] text-gray-500">
           <div className="flex items-center gap-1">
-            <span className="font-bold text-gray-900 tabular-nums">{question.totalLikes}</span> 赞同
+            <span className={`font-bold tabular-nums ${isLiked ? 'text-blue-600' : 'text-gray-900'}`}>
+              {isLiked ? question.totalLikes + 1 : question.totalLikes}
+            </span> 赞同
           </div>
           <div className="flex items-center gap-1">
-            <span className="font-bold text-gray-900 tabular-nums">{question.totalFavorites}</span> 收藏
+            <span className={`font-bold tabular-nums ${isFavorited ? 'text-yellow-500' : 'text-gray-900'}`}>
+              {isFavorited ? '已' : ''}收藏
+            </span>
           </div>
           <div className="ml-auto text-gray-400">{question.totalAnswers} 回答</div>
         </div>
@@ -133,18 +170,26 @@ export default function QuestionDetail() {
           </div>
           
           <div className="flex items-center gap-5">
-            <button className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 transition-colors group">
-              <svg className="w-5 h-5 group-active:scale-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* 赞同按钮 */}
+            <button 
+              onClick={onLike}
+              className={`flex items-center gap-1.5 transition-colors group ${isLiked ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}
+            >
+              <svg className={`w-5 h-5 group-active:scale-90 transition-transform ${isLiked ? 'fill-current' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.705l1.38-9a2 2 0 00-2-2.295H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
               </svg>
-              <span className="text-xs font-bold tabular-nums">{question.totalLikes}</span>
+              <span className="text-xs font-bold tabular-nums">{isLiked ? question.totalLikes + 1 : question.totalLikes}</span>
             </button>
 
-            <button className="flex items-center gap-1.5 text-gray-500 hover:text-yellow-500 transition-colors group">
-              <svg className="w-5 h-5 group-active:scale-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* 收藏按钮 */}
+            <button 
+              onClick={onFavorite}
+              className={`flex items-center gap-1.5 transition-colors group ${isFavorited ? 'text-yellow-500' : 'text-gray-500 hover:text-yellow-500'}`}
+            >
+              <svg className={`w-5 h-5 group-active:scale-90 transition-transform ${isFavorited ? 'fill-current' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
-              <span className="text-xs font-bold tabular-nums">{question.totalFavorites}</span>
+              <span className="text-xs font-bold tabular-nums">{isFavorited ? '已收藏' : question.totalFavorites}</span>
             </button>
           </div>
         </div>

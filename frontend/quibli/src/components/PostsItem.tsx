@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Post } from '@/types/index';
 import { MessageSquare, Heart, Star } from 'lucide-react';
+import { useUserStore } from '@/store/user'; // 1. 引入 Store
 
 interface PostsItemProps {
   post: Post;
@@ -22,11 +23,30 @@ const formatDate = (dateString: string) => {
 
 const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
   const navigate = useNavigate();
+  
+  // 2. 从 Store 中提取状态和方法
+  const { user, likePosts, favoritePost, isLogin } = useUserStore();
 
-  // 标签处理逻辑：最多3个，每个不超过5个字（解决中文显示过大的不协调感）
+  // 3. 判断当前用户是否已经点赞/收藏 (基于你定义的 likedPosts 和 collectPosts 数组)
+  const isLiked = user?.likePosts?.includes(post.id);
+  const isFavorited = user?.collectPosts?.includes(post.id);
+
   const displayTags = post.tags
     .slice(0, 3)
     .map(tag => tag.length > 5 ? tag.substring(0, 5) + '...' : tag);
+
+  // 4. 处理点击事件，阻止冒泡以防触发卡片跳转
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isLogin) return alert('请先登录');
+    likePost(post.id);
+  };
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isLogin) return alert('请先登录');
+    favoritePost(post.id);
+  };
 
   return (
     <div 
@@ -35,20 +55,14 @@ const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
     >
       <div className="flex gap-8">
         <div className="flex-1 min-w-0">
-          {/* 第一行：标题 */}
           <h2 className="text-[20px] font-bold text-gray-900 mb-4 line-clamp-1 group-hover:text-blue-600 transition-colors">
             {post.title}
           </h2>
 
-          {/* 第二行：用户头像、昵称、日期 */}
           <div className="flex items-center mb-5 space-x-3">
             <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
               {post.user.avatar ? (
-                <img 
-                  src={post.user.avatar} 
-                  alt={post.user.nickname} 
-                  className="w-full h-full object-cover"
-                />
+                <img src={post.user.avatar} alt={post.user.nickname} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-blue-500 text-[12px] text-white font-bold">
                   {post.user.nickname[0]?.toUpperCase()}
@@ -60,29 +74,38 @@ const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
             <span className="text-[14px] text-gray-400">{formatDate(post.publishedAt)}</span>
           </div>
 
-          {/* 第三行：正文内容 */}
           <p className="text-[15px] text-gray-500 line-clamp-2 leading-relaxed mb-5">
             {post.content}
           </p>
 
-          {/* 第四行：标签与交互数据 */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {displayTags.map((tag, index) => (
-                <span 
-                  key={index} 
-                  className="px-2 py-0.5 bg-gray-50 text-gray-400 text-[12px] rounded-sm hover:text-blue-600 hover:bg-blue-50 transition-colors border border-gray-100"
-                >
+                <span key={index} className="px-2 py-0.5 bg-gray-50 text-gray-400 text-[12px] rounded-sm hover:text-blue-600 hover:bg-blue-50 transition-colors border border-gray-100">
                   {tag}
                 </span>
               ))}
             </div>
 
             <div className="flex items-center space-x-5 text-gray-400">
-              <div className="flex items-center space-x-1.5">
-                <Heart className="w-5 h-5" />
+              {/* 点赞按钮：根据 isLiked 变色 */}
+              <div 
+                onClick={handleLike}
+                className={`flex items-center space-x-1.5 transition-colors hover:text-red-500 ${isLiked ? 'text-red-500' : ''}`}
+              >
+                <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
                 <span className="text-[14px]">{post.totalLikes || 0}</span>
               </div>
+
+              {/* 收藏按钮：根据 isFavorited 变色 */}
+              <div 
+                onClick={handleFavorite}
+                className={`flex items-center space-x-1.5 transition-colors hover:text-yellow-500 ${isFavorited ? 'text-yellow-500' : ''}`}
+              >
+                <Star className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
+                <span className="text-[14px]">收藏</span>
+              </div>
+
               <div className="flex items-center space-x-1.5">
                 <MessageSquare className="w-5 h-5" />
                 <span className="text-[14px]">{post.totalComments || 0}</span>
@@ -90,17 +113,6 @@ const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
             </div>
           </div>
         </div>
-
-        {/* 右侧封面图 */}
-        {/* {post.coverImage && (
-          <div className="hidden md:block w-[160px] h-[106px] rounded-sm overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100 self-center">
-            <img 
-              src={post.coverImage} 
-              alt="cover" 
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
-            />
-          </div>
-        )} */}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { getPostDetails, getPostComments } from '@/api/post'
 import { useSearchParams } from 'react-router-dom'
 import CommentSection from '@/components/CommentSection'
 import type { Post } from '@/types'
+import { useUserStore } from '@/store/user' // 1. 引入 store
 
 export default function PostDetail() {
   const { id } = useParams()
@@ -13,6 +14,13 @@ export default function PostDetail() {
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // 2. 从 Store 获取状态和方法
+  const { user, isLogin, likePost, favoritePost } = useUserStore()
+
+  // 3. 判断是否已点赞/收藏
+  const isLiked = user?.likePosts?.includes(Number(id))
+  const isFavorited = user?.favoritePosts?.includes(Number(id))
 
   useEffect(() => {
     if (!id) return
@@ -34,20 +42,28 @@ export default function PostDetail() {
   }, [id])
 
   const handleBack = () => {
-    // 1. 优先检查是否有明确指定的来源 URL (比如带参数的搜索页)
     if (location.state?.fromUrl) {
       navigate(location.state.fromUrl);
     } 
-    // 2. 如果没有明确来源，说明是普通跳转，直接回退一级
-    // 这样你在首页进来的，就会回到首页；个人中心进来的，就会回到个人中心
     else if (window.history.state && window.history.state.idx > 0) {
       navigate(-1);
     } 
-    // 3. 实在没有历史了，才去首页保底
     else {
       navigate('/', { replace: true });
     }
   };
+
+  // 4. 点赞处理逻辑
+  const onLike = async () => {
+    if (!isLogin) return navigate('/login')
+    await likePost(Number(id))
+  }
+
+  // 5. 收藏处理逻辑
+  const onFavorite = async () => {
+    if (!isLogin) return navigate('/login')
+    await favoritePost(Number(id))
+  }
 
   if (loading) return <div className="max-w-2xl mx-auto p-20 text-center text-gray-300 tracking-widest text-xs">LOADING...</div>
   if (!post) return <div className="max-w-2xl mx-auto p-20 text-center text-gray-400 border border-dashed m-10">POST NOT FOUND</div>
@@ -122,18 +138,40 @@ export default function PostDetail() {
           </div>
           
           <div className="flex items-center gap-8">
-            <button className="flex flex-col items-center group transition-colors hover:text-red-500 text-gray-400">
-              <svg className="w-6 h-6 transition-all group-active:scale-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* 点赞按钮 */}
+            <button 
+              onClick={onLike}
+              className={`flex flex-col items-center group transition-colors ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+            >
+              <svg 
+                className={`w-6 h-6 transition-all group-active:scale-90 ${isLiked ? 'fill-current' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span className="text-[10px] font-bold mt-0.5 text-gray-500 group-hover:text-red-500 tabular-nums">{post.totalLikes}</span>
+              <span className={`text-[10px] font-bold mt-0.5 tabular-nums ${isLiked ? 'text-red-500' : 'text-gray-500'}`}>
+                {isLiked ? post.totalLikes + 1 : post.totalLikes}
+              </span>
             </button>
 
-            <button className="flex flex-col items-center group transition-colors hover:text-yellow-500 text-gray-400">
-              <svg className="w-6 h-6 transition-all group-active:scale-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* 收藏按钮 */}
+            <button 
+              onClick={onFavorite}
+              className={`flex flex-col items-center group transition-colors ${isFavorited ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
+            >
+              <svg 
+                className={`w-6 h-6 transition-all group-active:scale-90 ${isFavorited ? 'fill-current' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
-              <span className="text-[10px] font-bold mt-0.5 text-gray-500 group-hover:text-yellow-500 tabular-nums">{post.totalFavorites}</span>
+              <span className={`text-[10px] font-bold mt-0.5 tabular-nums ${isFavorited ? 'text-yellow-500' : 'text-gray-500'}`}>
+                {isFavorited ? '已收藏' : '收藏'}
+              </span>
             </button>
           </div>
         </div>

@@ -113,6 +113,7 @@ export class UsersService {
   }
 
 
+  // 用户关注别的用户
   async follow(currentUserId: any, targetUserId: any) {
     // 强制转为数字，解决 "1" 导致的 Prisma 校验失败
     const followerId = parseInt(currentUserId);
@@ -164,6 +165,97 @@ export class UsersService {
         },
       });
       return { followed: true };
+    }
+  }
+
+
+  // 切换文章点赞
+  async toggleLikePost(currentUserId: any, postId: any) {
+    const userId = parseInt(currentUserId);
+    const targetPostId = parseInt(postId);
+
+    // 1. 查找是否存在记录
+    const existing = await this.prisma.userLikePost.findUnique({
+      where: { userId_postId: { userId, postId: targetPostId } }
+    });
+
+    // 2. 逻辑切换
+    if (existing) {
+      await this.prisma.userLikePost.delete({
+        where: { userId_postId: { userId, postId: targetPostId } }
+      });
+      return { status: false };
+    } else {
+      await this.prisma.userLikePost.create({
+        data: { userId, postId: targetPostId }
+      });
+      return { status: true };
+    }
+  }
+
+  // 切换问题点赞
+  async toggleLikeQuestion(currentUserId: any, questionId: any) {
+    const userId = parseInt(currentUserId);
+    const qId = parseInt(questionId);
+
+    const existing = await this.prisma.userLikeQuestion.findUnique({
+      where: { userId_questionId: { userId, questionId: qId } }
+    });
+
+    if (existing) {
+      await this.prisma.userLikeQuestion.delete({
+        where: { userId_questionId: { userId, questionId: qId } }
+      });
+      return { status: false };
+    } else {
+      await this.prisma.userLikeQuestion.create({
+        data: { userId, questionId: qId }
+      });
+      return { status: true };
+    }
+  }
+
+  // 切换文章收藏
+  async toggleFavoritePost(currentUserId: any, postId: any) {
+    const userId = parseInt(currentUserId);
+    const targetPostId = parseInt(postId);
+
+    const existing = await this.prisma.userFavoritePost.findUnique({
+      where: { userId_postId: { userId, postId: targetPostId } }
+    });
+
+    if (existing) {
+      await this.prisma.userFavoritePost.delete({
+        where: { userId_postId: { userId, postId: targetPostId } }
+      });
+      return { status: false };
+    } else {
+      await this.prisma.userFavoritePost.create({
+        data: { userId, postId: targetPostId }
+      });
+      return { status: true };
+    }
+  }
+
+  // 切换问题收藏
+  async toggleFavoriteQuestion(currentUserId: any, questionId: any) {
+    const userId = parseInt(currentUserId);
+    const qId = parseInt(questionId);
+
+    const existing = await this.prisma.userFavoriteQuestion.findUnique({
+      where: { userId_questionId: { userId, questionId: qId } }
+    });
+
+    if (existing) {
+      await this.prisma.userFavoriteQuestion.delete({
+        where: { userId_questionId: { userId, questionId: qId } }
+      });
+      return { status: false };
+    } else {
+      await this.prisma.userFavoriteQuestion.create({
+        data: { userId, questionId: qId }
+      });
+      return { status: true };
     }
   }
 }

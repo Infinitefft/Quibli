@@ -49,4 +49,36 @@ export class UsersController {
     // 确保 targetFollowId 是数字，Axios 传过来有时会变字符串
     return this.usersService.follow(userId, Number(targetFollowId));
   }
+
+
+  @Post('like-post')
+  @UseGuards(JwtAuthGuard)
+  async likePost(@Body('postId') postId: number, @Req() req) {
+    const userId = req.user.id;
+    return this.usersService.toggleLikePost(userId, postId);
+  }
+
+  // 2. 点赞问题
+  @Post('like-question')
+  @UseGuards(JwtAuthGuard)
+  async likeQuestion(@Body('questionId') questionId: number, @Req() req) {
+    const userId = req.user.id;
+    return this.usersService.toggleLikeQuestion(userId, questionId);
+  }
+
+  // 3. 收藏文章
+  @Post('favorite-post')
+  @UseGuards(JwtAuthGuard)
+  async favoritePost(@Body('postId') postId: number, @Req() req) {
+    const userId = req.user.id;
+    return this.usersService.toggleFavoritePost(userId, postId);
+  }
+
+  // 4. 收藏问题
+  @Post('favorite-question')
+  @UseGuards(JwtAuthGuard)
+  async favoriteQuestion(@Body('questionId') questionId: number, @Req() req) {
+    const userId = req.user.id;
+    return this.usersService.toggleFavoriteQuestion(userId, questionId);
+  }
 }

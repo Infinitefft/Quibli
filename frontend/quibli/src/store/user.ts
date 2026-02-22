@@ -23,7 +23,11 @@ interface UserStore {
   login: (credentials: Credential) => void;
   register: (credentials: RegisterCredentil) => void;
   logout: () => void;
-  follow: (userId: number) => Promise<void>
+  follow: (userId: number) => Promise<void>;
+  likePost: (postId: number) => Promise<void>;
+  likeQuestion: (questionId: number) => Promise<void>;
+  favoritePost: (postId: number) => Promise<void>;
+  favoriteQuestion: (questionId: number) => Promise<void>;
 }
 
 export const useUserStore = create<UserStore>() (
