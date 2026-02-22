@@ -129,7 +129,9 @@ export default function Home() {
       
       <header 
         ref={headerRef}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-[0_1px_2px_rgba(0,0,0,0.03)] will-change-transform"
+        // 1. 去掉 bg-white/95 和 backdrop-blur-md，改为不透明的 bg-white
+        // 2. 这样文字滑到下面时会被完全遮挡，不再有闪烁感
+        className="fixed top-0 left-0 right-0 z-50 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)] pt-10 will-change-transform"
       >
         <div 
           ref={searchBarRef}
@@ -164,7 +166,7 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="h-[48px] flex items-center justify-center relative bg-white/0 box-border border-b border-gray-100">
+        <div className="h-[48px] flex items-center justify-center relative bg-white box-border border-b border-gray-100">
           <button 
             onClick={() => setActiveTab('posts')}
             className={`flex-1 h-full flex items-center justify-center text-[15px] font-medium transition-colors relative ${
@@ -205,7 +207,7 @@ export default function Home() {
         >
           <div 
             ref={postsContainerRef}
-            className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[105px] pb-24"
+            className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[145px] pb-24"
             onScroll={handleScroll}
           >
             <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={postsContainerRef}>
@@ -225,7 +227,7 @@ export default function Home() {
 
           <div 
             ref={questionsContainerRef}
-            className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[105px] pb-24"
+            className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[145px] pb-24"
             onScroll={handleScroll}
           >
             <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={questionsContainerRef}>
