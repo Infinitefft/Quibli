@@ -1,26 +1,30 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getPostDetails, getPostComments } from '@/api/post'
-import { useSearchParams } from 'react-router-dom'
+// import { useSearchParams } from 'react-router-dom'
 import CommentSection from '@/components/CommentSection'
 import type { Post } from '@/types'
-import { useUserStore } from '@/store/user' // 1. 引入 store
+import { useUserStore } from '@/store/user'
 
 export default function PostDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams();
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // 2. 从 Store 获取状态和方法
-  const { user, isLogin, likePost, favoritePost } = useUserStore()
+  // 内部维护显示数字，用于乐观更新
+  const [displayLikes, setDisplayLikes] = useState(0)
+  const [displayFavorites, setDisplayFavorites] = useState(0)
 
-  // 3. 判断是否已点赞/收藏
+  const { user, isLogin, likePost, favoritePost, follow } = useUserStore()
+
   const isLiked = user?.likePosts?.includes(Number(id))
   const isFavorited = user?.favoritePosts?.includes(Number(id))
+  const isFollowed = user?.following?.includes(post?.user.id || 0)
+  const isSelf = user?.id === post?.user.id
 
   useEffect(() => {
     if (!id) return
@@ -32,6 +36,9 @@ export default function PostDetail() {
         ])
         setPost(postRes)
         setComments(commentRes)
+        // 初始化本地显示数字
+        setDisplayLikes(postRes.totalLikes || 0)
+        setDisplayFavorites(postRes.totalFavorites || 0)
       } catch (err) {
         console.error('加载详情失败:', err)
       } finally {
@@ -53,16 +60,24 @@ export default function PostDetail() {
     }
   };
 
-  // 4. 点赞处理逻辑
   const onLike = async () => {
     if (!isLogin) return navigate('/login')
+    // 乐观更新本地数字
+    setDisplayLikes(prev => isLiked ? prev - 1 : prev + 1)
     await likePost(Number(id))
   }
 
-  // 5. 收藏处理逻辑
   const onFavorite = async () => {
     if (!isLogin) return navigate('/login')
+    // 乐观更新本地数字
+    setDisplayFavorites(prev => isFavorited ? prev - 1 : prev + 1)
     await favoritePost(Number(id))
+  }
+
+  const handleFollow = async () => {
+    if (!isLogin) return navigate('/login')
+    if (isSelf || !post) return
+    await follow(post.user.id)
   }
 
   if (loading) return <div className="max-w-2xl mx-auto p-20 text-center text-gray-300 tracking-widest text-xs">LOADING...</div>
@@ -101,9 +116,18 @@ export default function PostDetail() {
               <div className="flex flex-col">
                 <div className="flex items-center gap-2.5">
                   <span className="text-sm font-bold text-gray-900">{post.user.nickname}</span>
-                  <button className="px-3 py-0.5 border border-blue-500 text-blue-500 rounded-full text-[11px] font-bold hover:bg-blue-50 transition-colors">
-                    + 关注
-                  </button>
+                  {!isSelf && (
+                    <button 
+                      onClick={handleFollow}
+                      className={`px-3 py-0.5 border rounded-full text-[11px] font-bold transition-all ${
+                        isFollowed 
+                          ? 'border-gray-200 text-gray-400 bg-white' 
+                          : 'border-blue-500 text-blue-500 hover:bg-blue-50'
+                      }`}
+                    >
+                      {isFollowed ? '已关注' : '+ 关注'}
+                    </button>
+                  )}
                 </div>
                 <span className="text-[12px] text-gray-400 mt-0.5">
                   {new Date(post.publishedAt).toLocaleDateString()}
@@ -152,7 +176,7 @@ export default function PostDetail() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
               <span className={`text-[10px] font-bold mt-0.5 tabular-nums ${isLiked ? 'text-red-500' : 'text-gray-500'}`}>
-                {isLiked ? post.totalLikes + 1 : post.totalLikes}
+                {displayLikes}
               </span>
             </button>
 
@@ -170,7 +194,7 @@ export default function PostDetail() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
               <span className={`text-[10px] font-bold mt-0.5 tabular-nums ${isFavorited ? 'text-yellow-500' : 'text-gray-500'}`}>
-                {isFavorited ? '已收藏' : '收藏'}
+                {isFavorited ? '已收藏' : displayFavorites}
               </span>
             </button>
           </div>

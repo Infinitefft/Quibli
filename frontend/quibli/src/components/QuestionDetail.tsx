@@ -2,23 +2,25 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getQuestionDetails, getQuestionComments } from '@/api/question'
 import CommentSection from '@/components/CommentSection';
-import { useSearchParams } from 'react-router-dom';
+// import { useSearchParams } from 'react-router-dom';
 import type { Question } from '@/types'
-import { useUserStore } from '@/store/user' // 1. 引入 store
+import { useUserStore } from '@/store/user'
 
 export default function QuestionDetail() {
   const { id } = useParams()
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams();
   const navigate = useNavigate()
   const location = useLocation()
   const [question, setQuestion] = useState<Question | null>(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // 2. 注入 Store 状态与方法
+  // 内部维护显示数字，接管 UI 层的显示
+  const [displayLikes, setDisplayLikes] = useState(0)
+  const [displayFavorites, setDisplayFavorites] = useState(0)
+
   const { user, isLogin, likeQuestion, favoriteQuestion, follow } = useUserStore()
 
-  // 3. 判定状态：点赞、收藏、是否为本人、是否已关注
   const isLiked = user?.likeQuestions?.includes(Number(id))
   const isFavorited = user?.favoriteQuestions?.includes(Number(id))
   const isFollowed = user?.following?.includes(question?.user.id || 0)
@@ -34,6 +36,9 @@ export default function QuestionDetail() {
         ])
         setQuestion(questionRes)
         setComments(commentRes)
+        // 初始化本地显示数字
+        setDisplayLikes(questionRes.totalLikes || 0)
+        setDisplayFavorites(questionRes.totalFavorites || 0)
       } catch (err) {
         console.error('加载详情失败:', err)
       } finally {
@@ -55,14 +60,17 @@ export default function QuestionDetail() {
     }
   };
 
-  // 4. 交互处理函数
   const onLike = async () => {
     if (!isLogin) return navigate('/login')
+    // 乐观更新：根据当前是否已点赞，手动增减数字
+    setDisplayLikes(prev => isLiked ? prev - 1 : prev + 1)
     await likeQuestion(Number(id))
   }
 
   const onFavorite = async () => {
     if (!isLogin) return navigate('/login')
+    // 乐观更新：根据当前是否已收藏，手动增减数字
+    setDisplayFavorites(prev => isFavorited ? prev - 1 : prev + 1)
     await favoriteQuestion(Number(id))
   }
 
@@ -110,7 +118,6 @@ export default function QuestionDetail() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2.5">
                 <span className="text-sm font-bold text-gray-900">{question.user.nickname}</span>
-                {/* 关注按钮逻辑 */}
                 {!isSelf && (
                   <button 
                     onClick={handleFollow}
@@ -146,7 +153,7 @@ export default function QuestionDetail() {
         <div className="flex items-center gap-6 border-y border-gray-50 py-3 mb-10 text-[13px] text-gray-500">
           <div className="flex items-center gap-1">
             <span className={`font-bold tabular-nums ${isLiked ? 'text-blue-600' : 'text-gray-900'}`}>
-              {isLiked ? question.totalLikes + 1 : question.totalLikes}
+              {displayLikes}
             </span> 赞同
           </div>
           <div className="flex items-center gap-1">
@@ -178,7 +185,7 @@ export default function QuestionDetail() {
               <svg className={`w-5 h-5 group-active:scale-90 transition-transform ${isLiked ? 'fill-current' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.705l1.38-9a2 2 0 00-2-2.295H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
               </svg>
-              <span className="text-xs font-bold tabular-nums">{isLiked ? question.totalLikes + 1 : question.totalLikes}</span>
+              <span className="text-xs font-bold tabular-nums">{displayLikes}</span>
             </button>
 
             {/* 收藏按钮 */}
@@ -189,7 +196,7 @@ export default function QuestionDetail() {
               <svg className={`w-5 h-5 group-active:scale-90 transition-transform ${isFavorited ? 'fill-current' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
-              <span className="text-xs font-bold tabular-nums">{isFavorited ? '已收藏' : question.totalFavorites}</span>
+              <span className="text-xs font-bold tabular-nums">{isFavorited ? '已收藏' : displayFavorites}</span>
             </button>
           </div>
         </div>
