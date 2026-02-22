@@ -23,10 +23,18 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { phone, password } = loginDto;
     // 根据手机号查询数据库中的用户
+    // 这里增加 include，一次性查出用户关联的交互数据 ID
     const user = await this.prisma.user.findUnique({
       where: {
         phone,
       },
+      include: {
+        following: true,   // 包含关注列表
+        likePosts: true,   // 包含点赞文章
+        favoritePosts: true, // 包含收藏文章
+        likeQuestions: true, // 包含点赞问题
+        favoriteQuestions: true, // 包含收藏问题
+      }
     });
     // hashed password 比对
     if(!user || !(await bcrypt.compare(password, user.password))) {
@@ -38,10 +46,16 @@ export class AuthService {
     // generateTokens 返回 access_token 和 refresh_token
     return {
       ...tokens,  // 使用 ... 把 generateTokens 返回的 { access_token, refresh_token } 和新的 user 对象组合成一个最终返回对象。
-      user:{
+      user: {
         id: user.id.toString(),
         nickname: user.nickname,
-        phone: user.phone
+        phone: user.phone,
+        // 将关联对象数组映射为前端需要的 ID 数组 (number[])
+        following: user.following.map(f => f.followingId),
+        likePosts: user.likePosts.map(l => l.postId),
+        favoritePosts: user.favoritePosts.map(f => f.postId),
+        likeQuestions: user.likeQuestions.map(l => l.questionId),
+        favoriteQuestions: user.favoriteQuestions.map(f => f.questionId),
       }
     }
   }

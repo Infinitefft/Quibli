@@ -25,11 +25,11 @@ const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
   const navigate = useNavigate();
   
   // 2. 从 Store 中提取状态和方法
-  const { user, likePosts, favoritePost, isLogin } = useUserStore();
+  const { user, likePost, favoritePost, isLogin } = useUserStore();
 
   // 3. 判断当前用户是否已经点赞/收藏 (基于你定义的 likedPosts 和 collectPosts 数组)
   const isLiked = user?.likePosts?.includes(post.id);
-  const isFavorited = user?.collectPosts?.includes(post.id);
+  const isFavorited = user?.favoritePosts?.includes(post.id);
 
   const displayTags = post.tags
     .slice(0, 3)

@@ -2,20 +2,17 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getQuestionDetails, getQuestionComments } from '@/api/question'
 import CommentSection from '@/components/CommentSection';
-// import { useSearchParams } from 'react-router-dom';
 import type { Question } from '@/types'
 import { useUserStore } from '@/store/user'
 
 export default function QuestionDetail() {
   const { id } = useParams()
-  // const [searchParams] = useSearchParams();
   const navigate = useNavigate()
   const location = useLocation()
   const [question, setQuestion] = useState<Question | null>(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // 内部维护显示数字，接管 UI 层的显示
   const [displayLikes, setDisplayLikes] = useState(0)
   const [displayFavorites, setDisplayFavorites] = useState(0)
 
@@ -62,14 +59,14 @@ export default function QuestionDetail() {
 
   const onLike = async () => {
     if (!isLogin) return navigate('/login')
-    // 乐观更新：根据当前是否已点赞，手动增减数字
+    // 乐观更新
     setDisplayLikes(prev => isLiked ? prev - 1 : prev + 1)
     await likeQuestion(Number(id))
   }
 
   const onFavorite = async () => {
     if (!isLogin) return navigate('/login')
-    // 乐观更新：根据当前是否已收藏，手动增减数字
+    // 乐观更新
     setDisplayFavorites(prev => isFavorited ? prev - 1 : prev + 1)
     await favoriteQuestion(Number(id))
   }
@@ -177,7 +174,6 @@ export default function QuestionDetail() {
           </div>
           
           <div className="flex items-center gap-5">
-            {/* 赞同按钮 */}
             <button 
               onClick={onLike}
               className={`flex items-center gap-1.5 transition-colors group ${isLiked ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}
@@ -188,7 +184,6 @@ export default function QuestionDetail() {
               <span className="text-xs font-bold tabular-nums">{displayLikes}</span>
             </button>
 
-            {/* 收藏按钮 */}
             <button 
               onClick={onFavorite}
               className={`flex items-center gap-1.5 transition-colors group ${isFavorited ? 'text-yellow-500' : 'text-gray-500 hover:text-yellow-500'}`}

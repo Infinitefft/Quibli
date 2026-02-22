@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getPostDetails, getPostComments } from '@/api/post'
-// import { useSearchParams } from 'react-router-dom'
 import CommentSection from '@/components/CommentSection'
 import type { Post } from '@/types'
 import { useUserStore } from '@/store/user'
@@ -10,17 +9,16 @@ export default function PostDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  // const [searchParams] = useSearchParams();
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // 内部维护显示数字，用于乐观更新
   const [displayLikes, setDisplayLikes] = useState(0)
   const [displayFavorites, setDisplayFavorites] = useState(0)
 
   const { user, isLogin, likePost, favoritePost, follow } = useUserStore()
 
+  
   const isLiked = user?.likePosts?.includes(Number(id))
   const isFavorited = user?.favoritePosts?.includes(Number(id))
   const isFollowed = user?.following?.includes(post?.user.id || 0)
@@ -36,7 +34,6 @@ export default function PostDetail() {
         ])
         setPost(postRes)
         setComments(commentRes)
-        // 初始化本地显示数字
         setDisplayLikes(postRes.totalLikes || 0)
         setDisplayFavorites(postRes.totalFavorites || 0)
       } catch (err) {
@@ -62,14 +59,12 @@ export default function PostDetail() {
 
   const onLike = async () => {
     if (!isLogin) return navigate('/login')
-    // 乐观更新本地数字
     setDisplayLikes(prev => isLiked ? prev - 1 : prev + 1)
     await likePost(Number(id))
   }
 
   const onFavorite = async () => {
     if (!isLogin) return navigate('/login')
-    // 乐观更新本地数字
     setDisplayFavorites(prev => isFavorited ? prev - 1 : prev + 1)
     await favoritePost(Number(id))
   }
@@ -162,7 +157,6 @@ export default function PostDetail() {
           </div>
           
           <div className="flex items-center gap-8">
-            {/* 点赞按钮 */}
             <button 
               onClick={onLike}
               className={`flex flex-col items-center group transition-colors ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
@@ -180,7 +174,6 @@ export default function PostDetail() {
               </span>
             </button>
 
-            {/* 收藏按钮 */}
             <button 
               onClick={onFavorite}
               className={`flex flex-col items-center group transition-colors ${isFavorited ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}

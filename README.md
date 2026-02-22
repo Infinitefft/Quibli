@@ -955,3 +955,39 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
   );
 };
 ```
+
+
+
+### 关注、点赞和收藏乐观更新
+- 先让用户看到效果，等后端返回真实数据后再更新真正的状态
+
+`store:`
+``` ts
+// 乐观更新点赞文章
+likePost: async (postId: number) => {
+  const { user } = get();
+  if (!user) return;
+
+  // 1. 获取当前状态
+  const oldLikes = user.likePosts || [];
+  const isLiked = oldLikes.includes(postId);
+
+  // 2. 计算新状态：已点赞则过滤掉，未点赞则添加
+  const newLikes = isLiked 
+    ? oldLikes.filter(id => id !== postId) 
+    : [...oldLikes, postId];
+
+  set({ user: { ...user, likePosts: newLikes } });
+  try {
+    await toggleLikePost(postId);
+  } catch (error) {
+    // 失败回滚
+    set({ user: { ...user, likePosts: oldLikes } });
+  }
+},
+```
+
+`详情页：`
+``` ts
+
+```
