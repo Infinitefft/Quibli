@@ -26,8 +26,8 @@ const Register = lazy(() => import('@/pages/Register'));
 const Loading = lazy(() => import('@/components/Loading'));
 const PublishQuestions = lazy(() => import('@/pages/Publish/PublishQuestions'));
 const PublishPosts = lazy(() => import('@/pages/Publish/PublishPosts'));
-const QuestionDetail = lazy(() => import('@/pages/QuestionDetail'));
-const PostDetail = lazy(() => import('@/pages/PostDetail'));
+const QuestionDetail = lazy(() => import('@/components/QuestionDetail'));
+const PostDetail = lazy(() => import('@/components/PostDetail'));
 const SearchSuggestions = lazy(() => import('@/pages/SearchSuggestions'));
 const Search = lazy(() => import('@/pages/Search'));
 

@@ -11,16 +11,18 @@ interface SearchListState {
 
 interface SearchResultStore {
   keyword: string;
-  activeTab: 'posts' | 'questions';
+  activeTab: 'posts' | 'questions' | 'users';
   
   postState: SearchListState;
   questionState: SearchListState;
+  userState: SearchListState;
 
   setKeyword: (keyword: string) => void;
-  setActiveTab: (tab: 'posts' | 'questions') => void;
+  setActiveTab: (tab: 'posts' | 'questions' | 'users') => void;
   
   setPostState: (state: Partial<SearchListState> | ((prev: SearchListState) => Partial<SearchListState>)) => void;
   setQuestionState: (state: Partial<SearchListState> | ((prev: SearchListState) => Partial<SearchListState>)) => void;
+  setUserState: (state: Partial<SearchListState> | ((prev: SearchListState) => Partial<SearchListState>)) => void;
   
   reset: () => void;
 }
@@ -39,6 +41,7 @@ export const useSearchResultStore = create<SearchResultStore>((set) => ({
   activeTab: 'posts',
   postState: initialListState,
   questionState: initialListState,
+  userState: initialListState,
 
   setKeyword: (keyword) => set({ keyword }),
   setActiveTab: (activeTab) => set({ activeTab }),
@@ -51,10 +54,15 @@ export const useSearchResultStore = create<SearchResultStore>((set) => ({
     questionState: { ...state.questionState, ...(typeof updater === 'function' ? updater(state.questionState) : updater) }
   })),
 
+  setUserState: (updater) => set((state) => ({
+    userState: { ...state.userState, ...(typeof updater === 'function' ? updater(state.userState) : updater) }
+  })),
+
   reset: () => set({
     keyword: '',
     activeTab: 'posts',
     postState: initialListState,
-    questionState: initialListState
+    questionState: initialListState,
+    userState: initialListState
   })
 }));

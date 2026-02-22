@@ -92,7 +92,7 @@ const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
         </div>
 
         {/* 右侧封面图 */}
-        {post.coverImage && (
+        {/* {post.coverImage && (
           <div className="hidden md:block w-[160px] h-[106px] rounded-sm overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100 self-center">
             <img 
               src={post.coverImage} 
@@ -100,7 +100,7 @@ const PostsItem: React.FC<PostsItemProps> = ({ post, onClick }) => {
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
             />
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

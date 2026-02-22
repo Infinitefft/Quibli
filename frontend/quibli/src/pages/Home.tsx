@@ -5,10 +5,10 @@ import { Search } from 'lucide-react';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { refreshHomePosts, refreshHomeQuestions } from '@/store/homeRefresh';
-import PostsItem from '@/pages/PostsItem';
+import PostsItem from '@/components/PostsItem';
 import useHomePostStore from '@/store/homePost';
 import useHomeQuestionStore from '@/store/homeQuestion';
-import QuestionsItem from '@/pages/QuestionsItem';
+import QuestionsItem from '@/components/QuestionsItem';
 import { useUserStore } from '@/store/user';
 
 export default function Home() {

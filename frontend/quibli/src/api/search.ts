@@ -16,7 +16,7 @@ export const SearchPostAndQuestion = async (keyword: string, type: 'post' | 'que
       limit,
     }
   })
-  console.log(res);
+  // console.log(res);
   return res;
 }
 

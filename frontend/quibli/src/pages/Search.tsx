@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/SearchInput';
 import { Search as SearchIcon, ArrowLeft } from 'lucide-react';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { Button } from '@/components/ui/button';
-import PostsItem from '@/pages/PostsItem';
-import QuestionsItem from '@/pages/QuestionsItem';
-import { SearchPostAndQuestion, SearchUser } from '@/api/search'; // 导入 SearchUser
+import PostsItem from '@/components/PostsItem';
+import QuestionsItem from '@/components/QuestionsItem';
+import UserItem from '@/components/UserItem';
+import { SearchPostAndQuestion, SearchUser } from '@/api/search';
 import { useSearchResultStore } from '@/store/searchResult';
 
 export default function SearchPage() {
@@ -28,7 +29,6 @@ export default function SearchPage() {
     reset
   } = useSearchResultStore() as any;
 
-  // --- 引用定义 ---
   const headerRef = useRef<HTMLElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const postsContainerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +38,6 @@ export default function SearchPage() {
   const lastScrollY = useRef(0);
   const currentTranslateY = useRef(parseInt(sessionStorage.getItem('search_header_translate') || '0'));
 
-  // --- Header 动画逻辑 (向上滑动隐藏搜索框) ---
   const updateHeader = (translate: number) => {
     currentTranslateY.current = translate;
     sessionStorage.setItem('search_header_translate', translate.toString());
@@ -53,7 +52,6 @@ export default function SearchPage() {
     }
   };
 
-  // --- 滚动位置恢复 ---
   useLayoutEffect(() => {
     const savedPostPos = sessionStorage.getItem('search_posts_scroll');
     const savedQuestionPos = sessionStorage.getItem('search_questions_scroll');
@@ -112,7 +110,6 @@ export default function SearchPage() {
     }
   };
 
-  // --- 左右划动切换 Tab ---
   const touchStartX = useRef<number | null>(null);
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
@@ -132,26 +129,25 @@ export default function SearchPage() {
     touchStartX.current = null;
   };
 
-  // --- 数据加载核心逻辑 ---
   const loadData = async (type: string, isInitial = false) => {
     const stateMap: any = { posts: postState, questions: questionState, users: userState };
     const setMap: any = { posts: setPostState, questions: setQuestionState, users: setUserState };
 
-    const state = stateMap[type];
+    const rawState = stateMap[type];
+    const state = rawState || { loading: false, hasMore: true, page: 1, list: [], initialized: false };
     const setState = setMap[type];
     
-    if (!state || state.loading || (!isInitial && !state.hasMore)) return;
+    if (typeof setState !== 'function') return;
+    if (state.loading || (!isInitial && !state.hasMore)) return;
 
-    setState((prev: any) => ({ ...prev, loading: true }));
+    setState((prev: any) => ({ ...(prev || { list: [], page: 1 }), loading: true }));
     try {
       const currentPage = isInitial ? 1 : state.page;
       let items = [];
       
-      // 分流处理：用户使用 SearchUser，文章问答使用 SearchPostAndQuestion
       if (type === 'users') {
-        // 请求拦截器已处理 res.data，所以这里拿到的 res 是后端的返回对象 { data: users, meta: ... }
         const res: any = await SearchUser(keyword, currentPage, 10);
-        items = res.data || []; 
+        items = res?.data || []; 
       } else {
         const apiType = type === 'posts' ? 'post' : 'question';
         const res: any = await SearchPostAndQuestion(keyword, apiType, currentPage);
@@ -191,11 +187,11 @@ export default function SearchPage() {
     if (keyword && storeKeyword === keyword) {
       const states: any = { posts: postState, questions: questionState, users: userState };
       const currentState = states[activeTab];
-      if (currentState && !currentState.initialized && !currentState.loading) {
+      if (!currentState || (!currentState.initialized && !currentState.loading)) {
         loadData(activeTab, true);
       }
     }
-  }, [activeTab, keyword, storeKeyword]);
+  }, [activeTab, keyword, storeKeyword, postState, questionState, userState]);
 
   const initialOpacity = Math.max(0, 1 - (Math.abs(currentTranslateY.current) / 40));
 
@@ -283,28 +279,7 @@ export default function SearchPage() {
               ) : (
                 <div className="space-y-2 px-4">
                   {userState?.list?.map((u: any) => (
-                    <div 
-                      key={`user-${u.id}`} 
-                      className="bg-white rounded-xl p-4 flex items-center border border-gray-100 active:bg-gray-50 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
-                      onClick={() => navigate(`/user/${u.id}`)}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-blue-50 flex-shrink-0 overflow-hidden border border-gray-100">
-                        {u.avatar ? (
-                          <img src={u.avatar} alt={u.nickname} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-blue-400 text-lg font-bold">{u.nickname?.charAt(0)}</div>
-                        )}
-                      </div>
-                      <div className="ml-3 flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div className="text-[16px] font-semibold text-gray-900 truncate">{u.nickname}</div>
-                          <span className="text-[11px] text-gray-400">UID: {u.id}</span>
-                        </div>
-                        <div className="text-[13px] text-gray-500 line-clamp-1 mt-0.5">
-                          {u.phone?.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')} · 粉丝 {u._count?.followedBy || 0}
-                        </div>
-                      </div>
-                    </div>
+                    <UserItem key={`user-${u.id}`} user={u} />
                   ))}
                 </div>
               )}
