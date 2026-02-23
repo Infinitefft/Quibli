@@ -162,7 +162,7 @@ export class UsersController {
 
 
   // 1. 获取指定用户的关注列表
-  @Get(':userId/following/users')
+  @Get(':userId/following')
   @UseGuards(JwtAuthGuard)
   async getFollowedUsers(
     @Param('userId') userId: string,
