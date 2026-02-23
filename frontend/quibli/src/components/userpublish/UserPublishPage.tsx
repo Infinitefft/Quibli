@@ -14,16 +14,19 @@ export default function UserPublishPage({ type, children }: Props) {
   const { user } = useUserStore();
 
   const isMe = String(user?.id) === String(paramsUserId);
+  const fromUrl = location.state?.fromUrl;
   const prefix = isMe ? '我的' : 'TA的';
   const title = type === 'posts' ? `${prefix}文章` : `${prefix}提问`;
 
   const handleBack = () => {
-    const fromUrl = location.state?.fromUrl;
-    if (fromUrl) {
-      // 如果有来源，直接跳回去，使用 replace: true 避免返回路径在历史栈里堆叠
+    if (isMe) {
+      // 如果是我自己的页面，强制回个人中心
+      navigate('/mine', { replace: true });
+    } else if (fromUrl) {
+      // 如果是别人的页面且有来源，回来源
       navigate(fromUrl, { replace: true });
     } else {
-      // 如果是用户直接输入 URL 进来的，没有 state，就后退一步
+      // 兜底后退
       navigate(-1);
     }
   };
