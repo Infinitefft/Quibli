@@ -54,6 +54,7 @@ export const getFavoritePosts = async (userId: number, page: number, limit: numb
       limit,
     }
   })
+  console.log("user.ts:getFavoritePosts:", res);
   return res;
 }
 
@@ -65,6 +66,7 @@ export const getFavoriteQuestions = async (userId: number, page: number, limit: 
       limit,
     }
   })
+  // console.log("user.ts:getFavoriteQuestions:", res);
   return res;
 }
 
