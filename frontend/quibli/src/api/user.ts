@@ -45,7 +45,8 @@ export const toggleFavoriteQuestion = async (questionId: number) => {
 };
 
 
-export const getMyFavoritePosts = async (userId: number, page: number, limit: number) => {
+// 用户个人主页以及他人主页拿到收藏的文章
+export const getFavoritePosts = async (userId: number, page: number, limit: number) => {
   const res = await axios.get('/user/getFavoritePosts', {
     params: {
       userId,
@@ -56,7 +57,7 @@ export const getMyFavoritePosts = async (userId: number, page: number, limit: nu
   return res;
 }
 
-export const getMyFavoriteQuestions = async (userId: number, page: number, limit: number) => {
+export const getFavoriteQuestions = async (userId: number, page: number, limit: number) => {
   const res = await axios.get('/user/getFavoriteQuestions', {
     params: {
       userId,
@@ -68,7 +69,7 @@ export const getMyFavoriteQuestions = async (userId: number, page: number, limit
 }
 
 
-export const getMyLikePosts = async (userId: number, page: number, limit: number) => {
+export const getLikePosts = async (userId: number, page: number, limit: number) => {
   const res = await axios.get('/user/getLikePosts', {
     params: {
       userId,
@@ -79,7 +80,7 @@ export const getMyLikePosts = async (userId: number, page: number, limit: number
   return res;
 }
 
-export const getMyLikeQuestions = async (userId: number, page: number, limit: number) => {
+export const getLikeQuestions = async (userId: number, page: number, limit: number) => {
   const res = await axios.get('/user/getLikeQuestions', {
     params: {
       userId,

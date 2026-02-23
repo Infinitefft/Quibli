@@ -258,4 +258,220 @@ export class UsersService {
       return { status: true };
     }
   }
+
+
+  // 查询用户收藏的文章
+  async getFavoritePosts(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    // 1. 查询该用户收藏的文章关联数据
+    const favoriteRelations = await this.prisma.userFavoritePost.findMany({
+      where: {
+        userId: userId,
+      },
+      skip,
+      take: limit,
+      include: {
+        post: {
+          include: {
+            user: true, // 文章的作者信息
+            tags: {
+              include: {
+                tag: true,
+              },
+            },
+            _count: {
+              select: {
+                likes: true,
+                favorites: true,
+                comments: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // 2. 结构化数据映射
+    const postItems = favoriteRelations.map((relation) => {
+      const post = relation.post;
+      return {
+        id: post.id,
+        title: post.title,
+        publishedAt: post.createAt?.toISOString() ?? '',
+        totalLikes: post._count.likes,
+        totalFavorites: post._count.favorites,
+        totalComments: post._count.comments,
+        user: {
+          id: post.user?.id ?? '',
+          phone: post.user?.phone ?? '',
+          nickname: post.user?.nickname ?? '',
+          avatar: post.user?.avatar ?? '',
+        },
+        content: post.content ?? '',
+        tags: post.tags.map((postTag) => postTag.tag.name),
+      };
+    });
+
+    // 3. 获取总数（用于前端分页计算）
+    const total = await this.prisma.userFavoritePost.count({
+      where: { userId },
+    });
+
+    return {
+      postItems,
+      total,
+    };
+  }
+
+
+  // 查询用户收藏的问题
+  async getFavoriteQuestions(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const favoriteRelations = await this.prisma.userFavoriteQuestion.findMany({
+      where: { userId },
+      skip,
+      take: limit,
+      include: {
+        question: {
+          include: {
+            user: true,
+            tags: {
+              include: { tag: true },
+            },
+            _count: {
+              select: {
+                likes: true,
+                favorites: true,
+                comments: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const questionItems = favoriteRelations.map((relation) => {
+      const question = relation.question;
+      return {
+        id: question.id,
+        title: question.title,
+        publishedAt: question.createAt?.toISOString() ?? '',
+        totalLikes: question._count.likes,
+        totalFavorites: question._count.favorites,
+        totalComments: question._count.comments,
+        user: {
+          id: question.user?.id ?? '',
+          phone: question.user?.phone ?? '',
+          nickname: question.user?.nickname ?? '',
+          avatar: question.user?.avatar ?? '',
+        },
+        tags: question.tags.map((qTag) => qTag.tag.name),
+      };
+    });
+
+    return { questionItems };
+  }
+
+
+  // 查询用户点赞的文章
+  async getLikePosts(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const likeRelations = await this.prisma.userLikePost.findMany({
+      where: { userId },
+      skip,
+      take: limit,
+      include: {
+        post: {
+          include: {
+            user: true,
+            tags: {
+              include: { tag: true },
+            },
+            _count: {
+              select: {
+                likes: true,
+                favorites: true,
+                comments: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const postItems = likeRelations.map((relation) => {
+      const post = relation.post;
+      return {
+        id: post.id,
+        title: post.title,
+        publishedAt: post.createAt?.toISOString() ?? '',
+        totalLikes: post._count.likes,
+        totalFavorites: post._count.favorites,
+        totalComments: post._count.comments,
+        user: {
+          id: post.user?.id ?? '',
+          phone: post.user?.phone ?? '',
+          nickname: post.user?.nickname ?? '',
+          avatar: post.user?.avatar ?? '',
+        },
+        content: post.content ?? '',
+        tags: post.tags.map((pTag) => pTag.tag.name),
+      };
+    });
+
+    return { postItems };
+  }
+
+
+  // 查询用户点赞的问题
+  async getLikeQuestions(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const likeRelations = await this.prisma.userLikeQuestion.findMany({
+      where: { userId },
+      skip,
+      take: limit,
+      include: {
+        question: {
+          include: {
+            user: true,
+            tags: {
+              include: { tag: true },
+            },
+            _count: {
+              select: {
+                likes: true,
+                favorites: true,
+                comments: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const questionItems = likeRelations.map((relation) => {
+      const question = relation.question;
+      return {
+        id: question.id,
+        title: question.title,
+        publishedAt: question.createAt?.toISOString() ?? '',
+        totalLikes: question._count.likes,
+        totalFavorites: question._count.favorites,
+        totalComments: question._count.comments,
+        user: {
+          id: question.user?.id ?? '',
+          phone: question.user?.phone ?? '',
+          nickname: question.user?.nickname ?? '',
+          avatar: question.user?.avatar ?? '',
+        },
+        tags: question.tags.map((qTag) => qTag.tag.name),
+      };
+    });
+
+    return { questionItems };
+  }
 }

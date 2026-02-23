@@ -81,4 +81,61 @@ export class UsersController {
     const userId = req.user.id;
     return this.usersService.toggleFavoriteQuestion(userId, questionId);
   }
+
+
+  // 获取收藏的文章
+  @Get('getFavoritePosts')
+  async getFavoritePosts(
+    @Query('userId') userId: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string
+  ) {
+    return this.usersService.getFavoritePosts(
+      parseInt(userId),
+      parseInt(page) || 1,
+      parseInt(limit) || 10
+    );
+  }
+
+  // 获取收藏的问题
+  @Get('getFavoriteQuestions')
+  async getFavoriteQuestions(
+    @Query('userId') userId: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string
+  ) {
+    return this.usersService.getFavoriteQuestions(
+      parseInt(userId),
+      parseInt(page) || 1,
+      parseInt(limit) || 10
+    );
+  }
+
+  // 获取点赞的文章
+  @Get('getLikePosts')
+  async getLikePosts(
+    @Query('userId') userId: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string
+  ) {
+    return this.usersService.getLikePosts(
+      parseInt(userId),
+      parseInt(page) || 1,
+      parseInt(limit) || 10
+    );
+  }
+
+  // 获取点赞的问题
+  @Get('getLikeQuestions')
+  async getLikeQuestions(
+    @Query('userId') userId: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string
+  ) {
+    return this.usersService.getLikeQuestions(
+      parseInt(userId),
+      parseInt(page) || 1,
+      parseInt(limit) || 10
+    );
+  }
 }
