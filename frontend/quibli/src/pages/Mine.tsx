@@ -86,10 +86,18 @@ export default function Mine() {
     }, 100);
   };
 
+  // 统一跳转关注/粉丝逻辑
+  const navigateToFollow = (type: 'following' | 'followers') => {
+    if (!user?.id) return;
+    navigate(`/user/${user.id}/follow?type=${type}`, { 
+      state: { fromUrl: location.pathname } 
+    });
+  };
+
   return (
     <div className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex flex-col relative overflow-hidden font-sans overscroll-none">
       
-      {/* 1. 顶部区域：pt-14 适配状态栏 */}
+      {/* 1. 顶部区域 */}
       <div className="pt-14 pb-6 px-6 relative z-10 shrink-0">
         <div className="flex items-center gap-5">
           <Drawer open={open} onOpenChange={setOpen}>
@@ -99,7 +107,7 @@ export default function Mine() {
                   <Avatar className="h-full w-full rounded-full border border-gray-100">
                     <AvatarImage src={user?.avatar} className="object-cover" />
                     <AvatarFallback className="bg-indigo-50 text-indigo-600 text-2xl font-bold">
-                      {user?.nickname?.[0].toUpperCase()}
+                      {user?.nickname?.[0]?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -143,11 +151,10 @@ export default function Mine() {
               <span className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">PRO</span>
             </div>
             
-            {/* 关注与粉丝数展示 */}
             <div className="flex items-center mt-3 gap-6">
               <div 
                 className="flex flex-col items-start cursor-pointer active:opacity-60 transition-opacity"
-                onClick={() => navigate('/mine/following')}
+                onClick={() => navigateToFollow('following')}
               >
                 <span className="text-[17px] font-bold text-gray-900 leading-none">
                   {(user as any)?.followingCount || 0}
@@ -155,7 +162,10 @@ export default function Mine() {
                 <span className="text-[11px] text-gray-400 mt-1 font-medium">关注</span>
               </div>
               <div className="w-[1px] h-3.5 bg-gray-200" />
-              <div className="flex flex-col items-start cursor-pointer active:opacity-60 transition-opacity">
+              <div 
+                className="flex flex-col items-start cursor-pointer active:opacity-60 transition-opacity"
+                onClick={() => navigateToFollow('followers')}
+              >
                 <span className="text-[17px] font-bold text-gray-900 leading-none">
                   {(user as any)?.followerCount || 0}
                 </span>
@@ -199,15 +209,6 @@ export default function Mine() {
             iconColor="text-rose-500"
             iconBg="bg-rose-50"
             onClick={() => navigate('/minelikes')}
-          />
-
-          <MenuRow 
-            icon={Users} 
-            title="关注列表" 
-            subTitle="查看我关注的用户"
-            iconColor="text-blue-500"
-            iconBg="bg-blue-50"
-            onClick={() => navigate('/mine/following')}
           />
 
           <MenuRow 

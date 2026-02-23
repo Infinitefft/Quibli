@@ -161,20 +161,37 @@ export class UsersController {
   }
 
 
-  // 获取关注的用户列表
-  @Get('following/users')
+  // 1. 获取指定用户的关注列表
+  @Get(':userId/following/users')
   @UseGuards(JwtAuthGuard)
   async getFollowedUsers(
-    @Req() req,
+    @Param('userId') userId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string
   ) {
-    const userId = req.user.id;
-    return this.usersService.getFollowedUsers(userId, {
+    return this.usersService.getFollowedUsers(Number(userId), {
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
     });
   }
+
+  // 2. 获取指定用户的粉丝列表
+  @Get(':userId/followers')
+  @UseGuards(JwtAuthGuard)
+  async getFollowers(
+    @Param('userId') userId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    return this.usersService.getFollowers(Number(userId), {
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+    });
+  }
+
+
+
+
 
   // 获取关注的人发布的文章
   @Get('following/posts')

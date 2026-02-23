@@ -35,8 +35,8 @@ const MineLikes = lazy(() => import('@/pages/MineLikes'));
 const UserQuestionsInfomations = lazy(() => import('@/components/userpublish/UserQuestionsInfomations'));
 const UserPostsInfomations = lazy(() => import('@/components/userpublish/UserPostsInfomations'));
 const UserPublishPage = lazy(() => import('@/components/userpublish/UserPublishPage'));
-const FollowingInformation = lazy(() => import('@/pages/FollowingInformation'));
-
+const FollowingInformation = lazy(() => import('@/components/userFollow/FollowingInformation'));
+const UserFollowPage = lazy(() => import('@/components/userFollow/UserFollowPage'));
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -55,8 +55,9 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/search" element={<Search />} />
             <Route path="/minefavorites" element={<MineFavorites />} />
             <Route path="/minelikes" element={<MineLikes />} />
-            <Route path="/mine/following" element={<FollowingInformation />} />
 
+
+            {/* 用户发布文章/问题列表 */}
             <Route path="/user/:userId/posts" element={
                 <UserPublishPage type="posts">
                   <UserPostsInfomations />
@@ -66,6 +67,14 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
                 <UserPublishPage type="questions">
                   <UserQuestionsInfomations />
                 </UserPublishPage>} />
+
+            {/* 用户社交关系列表 (关注/粉丝) */}
+            <Route path="/user/:userId/follow" element={
+                <UserFollowPage>
+                  <FollowingInformation />
+                </UserFollowPage>
+            } />
+
 
             <Route path="/" element={<MainLayout />}>
               <Route path="" element={<Home />} />

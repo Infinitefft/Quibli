@@ -111,8 +111,17 @@ export const getUserQuestions = async (userId: number, page: number, limit: numb
 
 
 // 获取关注的用户
-export const getFollowedUsers = async (page?: number, limit?: number) => {
-  const res = await axios.get('/user/following/users', {
+// 获取指定用户关注的人
+export const getFollowedUsers = async (userId: number, page?: number, limit?: number) => {
+  const res = await axios.get(`/user/${userId}/following`, {
+    params: { page, limit }
+  });
+  return res;
+}
+
+// 获取指定用户的粉丝
+export const getFollowers = async (userId: number, page?: number, limit?: number) => {
+  const res = await axios.get(`/user/${userId}/followers`, {
     params: { page, limit }
   });
   return res;

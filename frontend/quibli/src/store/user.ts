@@ -28,6 +28,7 @@ interface UserStore {
   favoriteQuestion: (questionId: number) => Promise<void>;
 }
 
+
 export const useUserStore = create<UserStore>() (
   persist((set, get) => ({
     user: null,
@@ -43,13 +44,14 @@ export const useUserStore = create<UserStore>() (
           ...res.user,
           // 强制初始化，哪怕后端返回的是 null，这里也变空数组
           // 同步后端数据
-          following: res.user.following || [],
-          likePosts: res.user.likePosts || [],
-          favoritePosts: res.user.favoritePosts || [],
-          likeQuestions: res.user.likeQuestions || [],
-          favoriteQuestions: res.user.favoriteQuestions || [],
-          followingCount: res.user.followingCount || 0,
-          followerCount: res.user.followerCount || 0,
+          following: res.user.following || [],  // 我关注的人的 ID 列表
+          followers: res.user.followers || [],  // 粉丝 ID 列表
+          likePosts: res.user.likePosts || [],   // 点赞的文章 ID 列表
+          favoritePosts: res.user.favoritePosts || [],  // 收藏的文章 ID 列表
+          likeQuestions: res.user.likeQuestions || [],  // 点赞的问题 ID 列表
+          favoriteQuestions: res.user.favoriteQuestions || [],  // 收藏的问题 ID 列表
+          followingCount: res.user.followingCount || 0,  // 关注数
+          followerCount: res.user.followerCount || 0,  // 粉丝数
         },
         accessToken: res.access_token,
         refreshToken: res.refresh_token,

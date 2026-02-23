@@ -4,8 +4,11 @@ export interface User {
   nickname: string;
   avatar?: string;
   
-  // 关注
+  // 关注与粉丝
   following?: number[];   // 我关注的人的 ID 列表
+  followers?: number[];   // 关注我的人的 ID 列表 (新增)
+  followingCount?: number; // 关注数
+  followerCount?: number;  // 粉丝数
 
   // 文章
   likePosts?: number[];   // 点赞的文章 ID 列表

@@ -575,29 +575,19 @@ export class UsersService {
 
 
   // 查询关注的用户
+  // 获取关注的用户列表
   async getFollowedUsers(userId: number, query?: { page?: number; limit?: number }) {
     const { page, limit } = query || {};
     const take = limit ? Number(limit) : undefined;
     const skip = (page && limit) ? (Number(page) - 1) * Number(limit) : undefined;
 
-    // 使用 Promise.all 同时查询列表和总数，效率更高
-    const [follows, followingCount, followersCount] = await Promise.all([
-      this.prisma.follow.findMany({
-        where: { followerId: Number(userId) },
-        include: { following: true },
-        orderBy: { createAt: 'desc' },
-        skip,
-        take,
-      }),
-      // 我关注了多少人
-      this.prisma.follow.count({
-        where: { followerId: Number(userId) }
-      }),
-      // 多少人关注了我（粉丝数）
-      this.prisma.follow.count({
-        where: { followingId: Number(userId) }
-      })
-    ]);
+    const follows = await this.prisma.follow.findMany({
+      where: { followerId: Number(userId) },
+      include: { following: true },
+      orderBy: { createAt: 'desc' },
+      skip,
+      take,
+    });
 
     const followedUsers = follows.map((follow) => ({
       id: follow.following.id,
@@ -609,10 +599,41 @@ export class UsersService {
 
     return {
       followedUsers,
-      followingCount, // 关注数
-      followersCount, // 粉丝数
+      // followingCount,
+      // followersCount,
     };
   }
+
+  // 获取粉丝列表
+  async getFollowers(userId: number, query?: { page?: number; limit?: number }) {
+    const { page, limit } = query || {};
+    const take = limit ? Number(limit) : undefined;
+    const skip = (page && limit) ? (Number(page) - 1) * Number(limit) : undefined;
+
+    const follows = await this.prisma.follow.findMany({
+      where: { followingId: Number(userId) },
+      include: { follower: true },
+      orderBy: { createAt: 'desc' },
+      skip,
+      take,
+    });
+
+    const followers = follows.map((follow) => ({
+      id: follow.follower.id,
+      phone: follow.follower.phone,
+      nickname: follow.follower.nickname,
+      avatar: follow.follower.avatar,
+      followedAt: follow.createAt?.toISOString() ?? '',
+    }));
+
+    return {
+      followers,
+      // followingCount,
+      // followersCount,
+    };
+  }
+
+
 
   // 查询关注的文章
   async getFollowedPosts(userId: number, query: { page?: number; limit?: number }) {
