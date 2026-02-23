@@ -48,6 +48,8 @@ export const useUserStore = create<UserStore>() (
           favoritePosts: res.user.favoritePosts || [],
           likeQuestions: res.user.likeQuestions || [],
           favoriteQuestions: res.user.favoriteQuestions || [],
+          followingCount: res.user.followingCount || 0,
+          followerCount: res.user.followerCount || 0,
         },
         accessToken: res.access_token,
         refreshToken: res.refresh_token,
@@ -77,23 +79,38 @@ export const useUserStore = create<UserStore>() (
       const oldFollowing = user.following || [];
       const isFollowed = oldFollowing.includes(targetFollowId);
 
+      // 记录旧的关注数用于回滚
+      const oldFollowingCount = (user as any).followingCount || 0;
+
       // 2. 乐观更新
       const newFollowing = isFollowed   // 如果已关注
         ? oldFollowing.filter(id => id !== targetFollowId)  // 取消关注
         : [...oldFollowing, targetFollowId];  // 否则添加到关注列表
 
+      // 计算新的关注数
+      const newFollowingCount = isFollowed 
+        ? Math.max(0, oldFollowingCount - 1) 
+        : oldFollowingCount + 1;
+
       // 更新 Store
       set({ 
         user: { 
           ...user, 
-          following: newFollowing 
-        } 
+          following: newFollowing,
+          followingCount: newFollowingCount // 新增关注数乐观更新
+        } as any
       });
       try {
         await followUser(targetFollowId);
       } catch (error) {
         // 失败回滚
-        set({ user: { ...user, following: oldFollowing } });
+        set({ 
+          user: { 
+            ...user, 
+            following: oldFollowing,
+            followingCount: oldFollowingCount // 失败回滚关注数
+          } as any
+        });
       }
     },
     // 乐观更新点赞文章

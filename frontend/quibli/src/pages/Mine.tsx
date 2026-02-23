@@ -149,12 +149,16 @@ export default function Mine() {
                 className="flex flex-col items-start cursor-pointer active:opacity-60 transition-opacity"
                 onClick={() => navigate('/mine/following')}
               >
-                <span className="text-[17px] font-bold text-gray-900 leading-none">0</span>
+                <span className="text-[17px] font-bold text-gray-900 leading-none">
+                  {(user as any)?.followingCount || 0}
+                </span>
                 <span className="text-[11px] text-gray-400 mt-1 font-medium">关注</span>
               </div>
               <div className="w-[1px] h-3.5 bg-gray-200" />
               <div className="flex flex-col items-start cursor-pointer active:opacity-60 transition-opacity">
-                <span className="text-[17px] font-bold text-gray-900 leading-none">0</span>
+                <span className="text-[17px] font-bold text-gray-900 leading-none">
+                  {(user as any)?.followerCount || 0}
+                </span>
                 <span className="text-[11px] text-gray-400 mt-1 font-medium">粉丝</span>
               </div>
             </div>

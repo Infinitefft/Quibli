@@ -34,6 +34,12 @@ export class AuthService {
         favoritePosts: true, // 包含收藏文章
         likeQuestions: true, // 包含点赞问题
         favoriteQuestions: true, // 包含收藏问题
+        _count: {
+          select: {
+            following: true,  // 我关注的人数 (对应模型中的 following)
+            followedBy: true, // 关注我的人数 (对应模型中的 followedBy，即粉丝数)
+          }
+        }
       }
     });
     // hashed password 比对
@@ -56,6 +62,8 @@ export class AuthService {
         favoritePosts: user.favoritePosts.map(f => f.postId),
         likeQuestions: user.likeQuestions.map(l => l.questionId),
         favoriteQuestions: user.favoriteQuestions.map(f => f.questionId),
+        followingCount: user._count.following,
+        followerCount: user._count.followedBy,
       }
     }
   }
