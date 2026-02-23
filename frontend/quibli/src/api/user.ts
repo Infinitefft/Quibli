@@ -92,3 +92,18 @@ export const getLikeQuestions = async (userId: number, page: number, limit: numb
   })
   return res;
 }
+
+
+export const getUserPosts = async (userId: number, page: number, limit: number) => {
+  const res = await axios.get(`/user/${userId}/getUserPosts`, {
+    params: { page, limit }
+  });
+  return res;
+}
+
+export const getUserQuestions = async (userId: number, page: number, limit: number) => {
+  const res = await axios.get(`/user/${userId}/getUserQuestions`, {
+    params: { page, limit }
+  });
+  return res;
+}

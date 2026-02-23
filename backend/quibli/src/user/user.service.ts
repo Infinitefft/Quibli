@@ -474,4 +474,101 @@ export class UsersService {
 
     return { questionItems };
   }
+
+
+
+  // 查询用户发布的文章
+  async getMyPosts(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    // 1. 并行获取列表和总数
+    const [posts, total] = await this.prisma.$transaction([
+      this.prisma.post.findMany({
+        where: { userId }, // 直接根据 userId 查作者
+        skip,
+        take: limit,
+        orderBy: { createAt: 'desc' },
+        include: {
+          user: true,
+          tags: {
+            include: { tag: true },
+          },
+          _count: {
+            select: {
+              likes: true,
+              favorites: true,
+              comments: true,
+            },
+          },
+        },
+      }),
+      this.prisma.post.count({ where: { userId } })
+    ]);
+
+    // 2. 映射数据结构以适配前端 PostsItem
+    const postItems = posts.map((post) => ({
+      id: post.id,
+      title: post.title,
+      publishedAt: post.createAt?.toISOString() ?? '',
+      totalLikes: post._count.likes,
+      totalFavorites: post._count.favorites,
+      totalComments: post._count.comments,
+      user: {
+        id: post.user?.id ?? '',
+        phone: post.user?.phone ?? '',
+        nickname: post.user?.nickname ?? '',
+        avatar: post.user?.avatar ?? '',
+      },
+      content: post.content ?? '',
+      tags: post.tags.map((pTag) => pTag.tag.name),
+    }));
+
+    return { postItems, total };
+  }
+
+  // 查询用户发布的问题
+  async getMyQuestions(userId: number, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [questions, total] = await this.prisma.$transaction([
+      this.prisma.question.findMany({
+        where: { userId },
+        skip,
+        take: limit,
+        orderBy: { createAt: 'desc' },
+        include: {
+          user: true,
+          tags: {
+            include: { tag: true },
+          },
+          _count: {
+            select: {
+              likes: true,
+              favorites: true,
+              comments: true,
+            },
+          },
+        },
+      }),
+      this.prisma.question.count({ where: { userId } })
+    ]);
+
+    const questionItems = questions.map((question) => ({
+      id: question.id,
+      title: question.title,
+      publishedAt: question.createAt?.toISOString() ?? '',
+      totalLikes: question._count.likes,
+      totalFavorites: question._count.favorites,
+      totalComments: question._count.comments,
+      user: {
+        id: question.user?.id ?? '',
+        phone: question.user?.phone ?? '',
+        nickname: question.user?.nickname ?? '',
+        avatar: question.user?.avatar ?? '',
+      },
+      tags: question.tags.map((qTag) => qTag.tag.name),
+    }));
+
+    return { questionItems, total };
+  }
 }

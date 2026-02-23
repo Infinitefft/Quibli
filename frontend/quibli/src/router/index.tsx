@@ -26,13 +26,15 @@ const Register = lazy(() => import('@/pages/Register'));
 const Loading = lazy(() => import('@/components/Loading'));
 const PublishQuestions = lazy(() => import('@/pages/Publish/PublishQuestions'));
 const PublishPosts = lazy(() => import('@/pages/Publish/PublishPosts'));
-const QuestionDetail = lazy(() => import('@/components/QuestionDetail'));
-const PostDetail = lazy(() => import('@/components/PostDetail'));
+const QuestionDetail = lazy(() => import('@/components/question/QuestionDetail'));
+const PostDetail = lazy(() => import('@/components/post/PostDetail'));
 const SearchSuggestions = lazy(() => import('@/pages/SearchSuggestions'));
 const Search = lazy(() => import('@/pages/Search'));
 const MineFavorites = lazy(() => import('@/pages/MineFavorites'));
 const MineLikes = lazy(() => import('@/pages/MineLikes'));
-
+const UserQuestionsInfomations = lazy(() => import('@/components/userpublish/UserQuestionsInfomations'));
+const UserPostsInfomations = lazy(() => import('@/components/userpublish/UserPostsInfomations'));
+const UserPublishPage = lazy(() => import('@/components/userpublish/UserPublishPage'));
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -51,6 +53,16 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/search" element={<Search />} />
             <Route path="/minefavorites" element={<MineFavorites />} />
             <Route path="/minelikes" element={<MineLikes />} />
+
+            <Route path="/user/:userId/posts" element={
+                <UserPublishPage type="posts">
+                  <UserPostsInfomations />
+                </UserPublishPage>} />
+                
+            <Route path="/user/:userId/questions" element={
+                <UserPublishPage type="questions">
+                  <UserQuestionsInfomations />
+                </UserPublishPage>} />
 
             <Route path="/" element={<MainLayout />}>
               <Route path="" element={<Home />} />

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useUserStore } from '@/store/user';
 import { useMineStore } from '@/store/mine';
+import { useLocation } from 'react-router-dom';
+
 import {
   Drawer,
   DrawerContent,
@@ -69,6 +71,7 @@ export default function Mine() {
   const { aiAvatar } = useMineStore();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
 
   const handleAction = async (type: string) => {
     setOpen(false);
@@ -166,7 +169,9 @@ export default function Mine() {
             title="我的文章"
             iconColor="text-emerald-600"
             iconBg="bg-emerald-50"
-            onClick={() => console.log('Articles')} 
+            onClick={() => navigate(`/user/${user?.id}/posts`, { 
+              state: { fromUrl: location.pathname } // 这里的 location.pathname 就是 '/mine'
+            })} 
           />
 
           <MenuRow 
@@ -174,7 +179,9 @@ export default function Mine() {
             title="我提的问题" 
             iconColor="text-violet-600"
             iconBg="bg-violet-50"
-            onClick={() => console.log('Questions')} 
+            onClick={() => navigate(`/user/${user?.id}/questions`, { 
+              state: { fromUrl: location.pathname } 
+            })} 
           />
 
           <MenuRow 

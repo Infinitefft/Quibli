@@ -986,8 +986,3 @@ likePost: async (postId: number) => {
   }
 },
 ```
-
-`详情页：`
-``` ts
-
-```

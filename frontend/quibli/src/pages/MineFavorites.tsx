@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { PullToRefresh } from '@/components/PullToRefresh';
-import PostsItem from '@/components/PostsItem';
-import QuestionsItem from '@/components/QuestionsItem';
+import PostsItem from '@/components/post/PostsItem';
+import QuestionsItem from '@/components/question/QuestionsItem';
 import { useUserStore } from '@/store/user';
 import { getFavoritePosts, getFavoriteQuestions } from '@/api/user';
 

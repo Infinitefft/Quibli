@@ -7,6 +7,8 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common'
 import { UsersService } from './user.service';
 import { RegisterDto } from './dto/user-register.dto';
@@ -137,5 +139,24 @@ export class UsersController {
       parseInt(page) || 1,
       parseInt(limit) || 10
     );
+  }
+
+
+  @Get(':userId/getUserPosts')
+  async getUserPosts(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('page', ParseIntPipe) page: number = 1,
+    @Query('limit', ParseIntPipe) limit: number = 10,
+  ) {
+    return await this.usersService.getMyPosts(userId, page, limit);
+  }
+
+  @Get(':userId/getUserQuestions')
+  async getUserQuestions(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('page', ParseIntPipe) page: number = 1,
+    @Query('limit', ParseIntPipe) limit: number = 10,
+  ) {
+    return await this.usersService.getMyQuestions(userId, page, limit);
   }
 }
