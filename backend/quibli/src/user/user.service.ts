@@ -571,4 +571,157 @@ export class UsersService {
 
     return { questionItems, total };
   }
+
+
+
+  // 查询关注的用户
+  async getFollowedUsers(userId: number, query?: { page?: number; limit?: number }) {
+    const { page, limit } = query || {};
+    const take = limit ? Number(limit) : undefined;
+    const skip = (page && limit) ? (Number(page) - 1) * Number(limit) : undefined;
+
+    // 使用 Promise.all 同时查询列表和总数，效率更高
+    const [follows, followingCount, followersCount] = await Promise.all([
+      this.prisma.follow.findMany({
+        where: { followerId: Number(userId) },
+        include: { following: true },
+        orderBy: { createAt: 'desc' },
+        skip,
+        take,
+      }),
+      // 我关注了多少人
+      this.prisma.follow.count({
+        where: { followerId: Number(userId) }
+      }),
+      // 多少人关注了我（粉丝数）
+      this.prisma.follow.count({
+        where: { followingId: Number(userId) }
+      })
+    ]);
+
+    const followedUsers = follows.map((follow) => ({
+      id: follow.following.id,
+      phone: follow.following.phone,
+      nickname: follow.following.nickname,
+      avatar: follow.following.avatar,
+      followedAt: follow.createAt?.toISOString() ?? '',
+    }));
+
+    return {
+      followedUsers,
+      followingCount, // 关注数
+      followersCount, // 粉丝数
+    };
+  }
+
+  // 查询关注的文章
+  async getFollowedPosts(userId: number, query: { page?: number; limit?: number }) {
+    const { page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+
+    // 1. 获取我关注的人的 ID 列表
+    const followedRecords = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+    const followingIds = followedRecords.map((f) => f.followingId);
+
+    // 2. 查询这些人的文章
+    const posts = await this.prisma.post.findMany({
+      where: {
+        userId: { in: followingIds },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        createAt: 'desc',
+      },
+      include: {
+        user: true,
+        tags: {
+          include: { tag: true },
+        },
+        _count: {
+          select: {
+            likes: true,
+            favorites: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    const postItems = posts.map((post) => ({
+      id: post.id,
+      title: post.title,
+      content: post.content ?? '',
+      publishedAt: post.createAt?.toISOString() ?? '',
+      totalLikes: post._count.likes,
+      totalFavorites: post._count.favorites,
+      totalComments: post._count.comments,
+      user: {
+        id: post.user?.id,
+        phone: post.user?.phone ?? '',
+        nickname: post.user?.nickname ?? '',
+        avatar: post.user?.avatar ?? '',
+      },
+      tags: post.tags.map((postTag) => postTag.tag.name),
+    }));
+
+    return { postItems };
+  }
+
+  // 查询关注的问题
+  async getFollowedQuestions(userId: number, query: { page?: number; limit?: number }) {
+    const { page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+
+    const followedRecords = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+    const followingIds = followedRecords.map((f) => f.followingId);
+
+    const questions = await this.prisma.question.findMany({
+      where: {
+        userId: { in: followingIds },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        createAt: 'desc',
+      },
+      include: {
+        user: true,
+        tags: {
+          include: { tag: true },
+        },
+        _count: {
+          select: {
+            likes: true,
+            favorites: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    const questionItems = questions.map((question) => ({
+      id: question.id,
+      title: question.title,
+      publishedAt: question.createAt?.toISOString() ?? '',
+      totalAnswers: question._count.comments,
+      totalLikes: question._count.likes,
+      totalFavorites: question._count.favorites,
+      user: {
+        id: question.user?.id,
+        phone: question.user?.phone ?? '',
+        nickname: question.user?.nickname ?? '',
+        avatar: question.user?.avatar ?? '',
+      },
+      tags: question.tags.map((item) => item.tag.name),
+    }));
+
+    return { questionItems };
+  }
 }

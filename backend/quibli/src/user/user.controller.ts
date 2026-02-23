@@ -159,4 +159,50 @@ export class UsersController {
   ) {
     return await this.usersService.getMyQuestions(userId, page, limit);
   }
+
+
+  // 获取关注的用户列表
+  @Get('following/users')
+  @UseGuards(JwtAuthGuard)
+  async getFollowedUsers(
+    @Req() req,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    const userId = req.user.id;
+    return this.usersService.getFollowedUsers(userId, {
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+    });
+  }
+
+  // 获取关注的人发布的文章
+  @Get('following/posts')
+  @UseGuards(JwtAuthGuard)
+  async getFollowedPosts(
+    @Req() req,
+    @Query('page') page: string,
+    @Query('limit') limit: string
+  ) {
+    const userId = Number(req.user.id);
+    return this.usersService.getFollowedPosts(userId, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
+    });
+  }
+
+  // 获取关注的人发布的问题
+  @Get('following/questions')
+  @UseGuards(JwtAuthGuard)
+  async getFollowedQuestions(
+    @Req() req,
+    @Query('page') page: string,
+    @Query('limit') limit: string
+  ) {
+    const userId = Number(req.user.id);
+    return this.usersService.getFollowedQuestions(userId, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
+    });
+  }
 }

@@ -35,6 +35,8 @@ const MineLikes = lazy(() => import('@/pages/MineLikes'));
 const UserQuestionsInfomations = lazy(() => import('@/components/userpublish/UserQuestionsInfomations'));
 const UserPostsInfomations = lazy(() => import('@/components/userpublish/UserPostsInfomations'));
 const UserPublishPage = lazy(() => import('@/components/userpublish/UserPublishPage'));
+const FollowingInformation = lazy(() => import('@/pages/FollowingInformation'));
+
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -53,6 +55,7 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/search" element={<Search />} />
             <Route path="/minefavorites" element={<MineFavorites />} />
             <Route path="/minelikes" element={<MineLikes />} />
+            <Route path="/mine/following" element={<FollowingInformation />} />
 
             <Route path="/user/:userId/posts" element={
                 <UserPublishPage type="posts">

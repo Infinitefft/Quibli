@@ -107,3 +107,23 @@ export const getUserQuestions = async (userId: number, page: number, limit: numb
   });
   return res;
 }
+
+
+
+// 获取关注的用户
+export const getFollowedUsers = async (page?: number, limit?: number) => {
+  const res = await axios.get('/user/following/users', {
+    params: { page, limit }
+  });
+  return res;
+}
+
+export const getFollowedPosts = async (page: number, limit: number) => {
+  const res = await axios.get('/user/following/posts', { params: { page, limit } });
+  return res;
+}
+
+export const getFollowedQuestions = async (page: number, limit: number) => {
+  const res = await axios.get('/user/following/questions', { params: { page, limit } });
+  return res;
+}
