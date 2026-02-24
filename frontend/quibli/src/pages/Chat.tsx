@@ -1,12 +1,29 @@
-import React, { useState, useEffect } from 'react'; // 新增 useEffect
-import { Send, Sparkles, User, Bot, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Sparkles, RotateCcw } from 'lucide-react';
 import { useChatBot, useAutoScroll } from '@/hooks/useChatBot';
 import ChatGreetings from '@/components/ui/ChatGreetings';
 import BottomNav from '@/components/BottomNav';
 import BackToBottom from '@/components/BackToBottom';
 import { useChatStore } from '@/store/chatStore';
+import { useUserStore } from '@/store/user';
 
-
+// AI 专用头像组件：参照你的 Logo 风格
+const BotAvatar = () => (
+  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center shadow-lg shadow-gray-200 overflow-hidden mt-0.5 border border-gray-800">
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="white" 
+      strokeWidth="2.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className="w-4 h-4"
+    >
+      <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" />
+      <path d="M19 19l-3.5-3.5" />
+    </svg>
+  </div>
+);
 
 const HeaderLogo = () => (
   <div className="relative group select-none w-10 h-10 flex-shrink-0">
@@ -21,21 +38,18 @@ const HeaderLogo = () => (
 );
 
 export default function Chat() {
-  // 严格保留原有的 hook
   const { messages, sendMessage, isLoading, setMessages } = useChatBot() as any; 
   const [input, setInput] = useState('');
   
-  // 新增：从持久化 Store 获取数据
   const { storedMessages, setStoredMessages, clearStoredMessages } = useChatStore() as any;
+  const { user } = useUserStore(); // 获取用户信息
 
-  // 新增：初始化时将本地存储同步到 useChatBot
   useEffect(() => {
     if (storedMessages && storedMessages.length > 0 && messages.length === 0) {
       setMessages(storedMessages);
     }
   }, []);
 
-  // 新增：当消息变化时，同步到本地存储
   useEffect(() => {
     if (messages.length > 0) {
       setStoredMessages(messages);
@@ -51,7 +65,6 @@ export default function Chat() {
     setInput('');
   };
 
-  // 修改：清空逻辑增加对持久化 Store 的清理
   const handleReset = () => {
     clearStoredMessages();
     window.location.reload();
@@ -66,7 +79,6 @@ export default function Chat() {
 
       <div className="flex flex-col h-[100dvh] w-full bg-slate-50 font-sans overflow-hidden relative">
         
-        {/* 1. Header: 适配手机状态栏 */}
         <header className="fixed top-0 left-0 right-0 h-24 pt-10 px-4 flex items-center gap-3 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 touch-none">
           <HeaderLogo />
           <div className="flex flex-col justify-center h-full pt-1">
@@ -76,14 +88,13 @@ export default function Chat() {
             <p className="text-[10px] text-slate-400 font-medium tracking-wide">AI COMPANION</p>
           </div>
           <button 
-            onClick={handleReset} // 改为调用清理函数
+            onClick={handleReset}
             className="ml-auto p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors active:scale-95"
           >
             <RotateCcw size={20} />
           </button>
         </header>
 
-        {/* 2. Main Chat Area */}
         <div 
           ref={scrollRef}
           className={`
@@ -93,15 +104,12 @@ export default function Chat() {
               : 'overflow-y-auto overscroll-y-contain'
             }
           `}
-          style={{
-            background: 'linear-gradient(to bottom, #f8fafc, #eff6ff)'
-          }}
+          style={{ background: 'linear-gradient(to bottom, #f8fafc, #eff6ff)' }}
         >
           {messages.length === 0 ? (
             <div className="min-h-full flex flex-col justify-center items-center p-6">
                <div className="absolute top-[20%] right-[10%] w-72 h-72 bg-blue-100/40 rounded-full blur-3xl pointer-events-none mix-blend-multiply animate-pulse" />
                <div className="absolute bottom-[30%] left-[10%] w-72 h-72 bg-indigo-100/40 rounded-full blur-3xl pointer-events-none mix-blend-multiply animate-pulse [animation-delay:2s]" />
-               
                <div className="z-10 w-full transform -translate-y-8">
                  <ChatGreetings />
                </div>
@@ -116,15 +124,20 @@ export default function Chat() {
                     className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
                   >
                     <div className={`flex max-w-[85%] gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <div className={`
-                        flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm mt-0.5
-                        ${isUser 
-                          ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white' 
-                          : 'bg-white text-indigo-600 border border-indigo-50 shadow-indigo-100/50'
-                        }
-                      `}>
-                        {isUser ? <User size={15} /> : <Bot size={15} />}
-                      </div>
+                      {/* 头像判断逻辑 */}
+                      {isUser ? (
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border border-indigo-100 shadow-sm mt-0.5 bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
+                          {user?.avatar ? (
+                            <img src={user.avatar} className="w-full h-full object-cover" alt="User" />
+                          ) : (
+                            <span className="text-white text-[12px] font-bold">
+                              {user?.nickname ? user.nickname[0].toUpperCase() : 'U'}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <BotAvatar />
+                      )}
 
                       <div 
                         className={`
@@ -145,9 +158,7 @@ export default function Chat() {
               {isLoading && (
                 <div className="flex justify-start w-full animate-in fade-in duration-300">
                   <div className="flex gap-3 max-w-[85%]">
-                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white text-indigo-600 border border-indigo-50 flex items-center justify-center shadow-sm mt-0.5">
-                        <Sparkles size={14} className="animate-pulse" />
-                     </div>
+                     <BotAvatar />
                      <div className="bg-white border border-gray-100 px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-1.5 shadow-sm">
                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
@@ -161,7 +172,7 @@ export default function Chat() {
           )}
         </div>
 
-        {/* 3. Input Area */}
+        {/* Input Area */}
         <div className="fixed bottom-[64px] left-0 right-0 z-40 bg-white/85 backdrop-blur-md border-t border-gray-100/50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] touch-none">
           <div className="max-w-3xl mx-auto p-3">
               <form 

@@ -17,7 +17,7 @@ export default function PublishPost() {
   const [showTitleError, setShowTitleError] = useState(false);
 
   // --- 配置权重上限 ---
-  const TITLE_MIN_SCORE = 10;    // 标题最小分
+  const TITLE_MIN_SCORE = 6;    // 标题最小分
   const TITLE_SCORE_LIMIT = 100; // 标题最大总分
   const TAG_SCORE_LIMIT = 14;   // 单个标签权重上限
   const MAX_TAG_COUNT = 5;

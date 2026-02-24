@@ -10,7 +10,6 @@ import { getFollowedUsers, getFollowedPosts, getFollowedQuestions } from '@/api/
 import { useUserStore } from '@/store/user';
 import BackToTop from '@/components/BackToTop';
 
-// 缓存对象：保留页面切换后的状态
 const cache = {
   followedUsers: [] as User[],
   posts: [] as Post[],
@@ -32,7 +31,6 @@ export default function Following() {
   const location = useLocation();
   const user = useUserStore((state) => state.user);
 
-  // 状态管理
   const [followedUsers, setFollowedUsers] = useState<User[]>(cache.followedUsers);
   const [activeTab, setActiveTab] = useState<'posts' | 'questions'>(cache.activeTab);
   const [posts, setPosts] = useState<Post[]>(cache.posts);
@@ -45,11 +43,9 @@ export default function Following() {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // 1. 获取关注的用户列表 (拦截器已处理 res.data)
   const fetchFollowedUsers = useCallback(async () => {
     if (!user?.id || cache.usersFetched) return;
     try {
-      // 这里的 res 直接就是后端 return 的对象
       const res = await getFollowedUsers(user.id, 1, 30);
       const users = res.followedUsers || [];
       cache.followedUsers = users;
@@ -60,24 +56,18 @@ export default function Following() {
     }
   }, [user?.id]);
 
-  // 2. 加载文章
   const loadMorePosts = useCallback(async () => {
     if (loadingPosts || !cache.hasMorePosts || !user?.id || cache.fetchingPostsPage === cache.postsPage) return;
-
     setLoadingPosts(true);
     cache.fetchingPostsPage = cache.postsPage;
-
     try {
       const res = await getFollowedPosts(cache.postsPage, 10);
       const newItems: Post[] = res.postItems || [];
-      
       const existingIds = new Set(cache.posts.map(item => item.id));
       const uniqueItems = newItems.filter(item => !existingIds.has(item.id));
-      
       cache.posts = [...cache.posts, ...uniqueItems];
       cache.hasMorePosts = newItems.length === 10;
       cache.postsPage += 1;
-      
       setPosts([...cache.posts]);
     } finally {
       setLoadingPosts(false);
@@ -85,24 +75,18 @@ export default function Following() {
     }
   }, [user?.id, loadingPosts]);
 
-  // 3. 加载问题
   const loadMoreQuestions = useCallback(async () => {
     if (loadingQuestions || !cache.hasMoreQuestions || !user?.id || cache.fetchingQuestionsPage === cache.questionsPage) return;
-
     setLoadingQuestions(true);
     cache.fetchingQuestionsPage = cache.questionsPage;
-
     try {
       const res = await getFollowedQuestions(cache.questionsPage, 10);
       const newItems: Question[] = res.questionItems || [];
-      
       const existingIds = new Set(cache.questions.map(item => item.id));
       const uniqueItems = newItems.filter(item => !existingIds.has(item.id));
-      
       cache.questions = [...cache.questions, ...uniqueItems];
       cache.hasMoreQuestions = newItems.length === 10;
       cache.questionsPage += 1;
-      
       setQuestions([...cache.questions]);
     } finally {
       setLoadingQuestions(false);
@@ -110,14 +94,12 @@ export default function Following() {
     }
   }, [user?.id, loadingQuestions]);
 
-  // 初始化请求
   useEffect(() => {
     fetchFollowedUsers();
     if (cache.posts.length === 0) loadMorePosts();
     if (cache.questions.length === 0) loadMoreQuestions();
   }, [fetchFollowedUsers, loadMorePosts, loadMoreQuestions]);
 
-  // 刷新逻辑
   const handleRefresh = async () => {
     if (activeTab === 'posts') {
       cache.postsPage = 1;
@@ -134,11 +116,13 @@ export default function Following() {
     }
   };
 
-  // 滚动位置恢复
   useLayoutEffect(() => {
-    if (postsContainerRef.current && cache.postsScrollY > 0) postsContainerRef.current.scrollTop = cache.postsScrollY;
-    if (questionsContainerRef.current && cache.questionsScrollY > 0) questionsContainerRef.current.scrollTop = cache.questionsScrollY;
-  }, []);
+    if (activeTab === 'posts' && postsContainerRef.current) {
+      postsContainerRef.current.scrollTop = cache.postsScrollY;
+    } else if (activeTab === 'questions' && questionsContainerRef.current) {
+      questionsContainerRef.current.scrollTop = cache.questionsScrollY;
+    }
+  }, [activeTab, posts.length, questions.length]);
 
   useEffect(() => { cache.activeTab = activeTab; }, [activeTab]);
 
@@ -148,14 +132,17 @@ export default function Following() {
   };
 
   const handleItemClick = (id: number, type: 'posts' | 'questions') => {
-    navigate(`/${type === 'posts' ? 'post' : 'question'}/${id}`, { state: { fromUrl: location.pathname } });
+    navigate(`/${type}/${id}`, { 
+      state: { fromUrl: location.pathname } 
+    });
   };
 
   const handleUserClick = (userId: number) => {
-    navigate(`/user/${userId}/posts`, { state: { fromUrl: location.pathname } });
+    navigate(`/user/${userId}/posts`, { 
+      state: { fromUrl: location.pathname } 
+    });
   };
 
-  // 手势切换
   const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.targetTouches[0].clientX; touchEndX.current = null; };
   const handleTouchMove = (e: React.TouchEvent) => { touchEndX.current = e.targetTouches[0].clientX; };
   const handleTouchEnd = () => {
@@ -177,7 +164,6 @@ export default function Following() {
         </div>
       </header>
 
-      {/* 横向关注用户列表 */}
       <div className="pt-3 pb-4 border-b border-gray-100 flex-shrink-0 bg-white">
         <div className="flex overflow-x-auto no-scrollbar space-x-5 px-4">
           {followedUsers.map(u => (
@@ -203,7 +189,6 @@ export default function Following() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="h-[48px] flex items-center justify-center relative bg-white border-b border-gray-100 flex-shrink-0">
         <button 
           onClick={() => setActiveTab('posts')} 
@@ -230,7 +215,6 @@ export default function Following() {
           className="flex w-[200vw] h-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]" 
           style={{ transform: activeTab === 'posts' ? 'translateX(0)' : 'translateX(-50%)' }}
         >
-          {/* 文章动态 */}
           <div 
             ref={postsContainerRef} 
             className="w-screen h-full overflow-y-auto no-scrollbar pb-24" 
@@ -250,7 +234,6 @@ export default function Following() {
             </PullToRefresh>
           </div>
           
-          {/* 问题动态 */}
           <div 
             ref={questionsContainerRef} 
             className="w-screen h-full overflow-y-auto no-scrollbar pb-24" 
