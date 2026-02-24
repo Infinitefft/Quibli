@@ -5,7 +5,9 @@ import { useUserStore } from '@/store/user';
 // instance 拦截器
 // instance 即为 axios 实例
 const instance = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  // baseURL: 'http://localhost:3001/api',
+  // baseURL: (import.meta.env.VITE_BASE_URL || 'http://localhost:3001') + '/api',
+  baseURL: (import.meta.env.VITE_API_URL || 'https://pharmaceutical-compared-delhi-voted.trycloudflare.com') + '/api',
 })
 
 // 请求拦截器，在请求发送前添加 token

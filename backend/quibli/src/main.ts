@@ -8,9 +8,22 @@ import { join } from 'path';  // node 内置模块 路径 join 方法
 
 async function bootstrap() {
   // 底座是基于express
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    cors: true   // 跨域
+  // const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+  //   cors: true   // 跨域
+  // });
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.enableCors({
+    origin: [
+      'https://quibli.top',
+      'https://www.quibli.top',
+      'https://quibli.vercel.app', // 允许你 Vercel 的前端域名
+      'http://localhost:5173'      // 允许本地开发环境
+    ],
+    credentials: true,
   });
+
   app.setGlobalPrefix('api');  // 全局路由前缀/api
   // 启用全局验证管道，基于express
   app.useGlobalPipes(new ValidationPipe({
