@@ -9,6 +9,7 @@ const instance = axios.create({
   // baseURL: (import.meta.env.VITE_BASE_URL || 'http://localhost:3001') + '/api',
   baseURL: (import.meta.env.VITE_API_URL || 'https://pharmaceutical-compared-delhi-voted.trycloudflare.com') + '/api',
 })
+console.log("baseURL:", instance.defaults.baseURL);
 
 // 请求拦截器，在请求发送前添加 token
 instance.interceptors.request.use(config => {

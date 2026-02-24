@@ -14,15 +14,23 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+
   app.enableCors({
-    origin: [
-      'https://quibli.top',
-      'https://www.quibli.top',
-      'https://quibli.vercel.app', // 允许你 Vercel 的前端域名
-      'http://localhost:5173'      // 允许本地开发环境
-    ],
+    origin: (origin, callback) => {
+      callback(null, true);
+    },
     credentials: true,
   });
+
+  // app.enableCors({
+  //   origin: [
+  //     'https://quibli.top',
+  //     'https://www.quibli.top',
+  //     'https://quibli.vercel.app', // 允许你 Vercel 的前端域名
+  //     'http://localhost:5173'      // 允许本地开发环境
+  //   ],
+  //   credentials: true,
+  // });
 
   app.setGlobalPrefix('api');  // 全局路由前缀/api
   // 启用全局验证管道，基于express
