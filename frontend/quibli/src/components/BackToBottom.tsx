@@ -1,27 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { throttle } from '@/utils/Throttle';
 
-interface BackToTopProps {
+interface BackToBottomProps {
   targetRef: React.RefObject<HTMLDivElement>;
   threshold?: number;
   right?: number;
   bottom?: number;
   tabBarHeight?: number;
+  inputAreaHeight?: number;
 }
 
-const BackToTop: React.FC<BackToTopProps> = ({ 
+const BackToBottom: React.FC<BackToBottomProps> = ({ 
   targetRef,
-  threshold = 400, 
+  threshold = 300, 
   right = 16, 
   bottom = 20,
-  tabBarHeight = 0 
+  tabBarHeight = 64,
+  inputAreaHeight = 70
 }) => {
   const [visible, setVisible] = useState(false);
 
   const checkScroll = useCallback(
     throttle(() => {
       if (targetRef.current) {
-        setVisible(targetRef.current.scrollTop > threshold);
+        const { scrollTop, scrollHeight, clientHeight } = targetRef.current;
+        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+        setVisible(distanceFromBottom > threshold);
       }
     }, 200),
     [threshold, targetRef]
@@ -35,22 +39,24 @@ const BackToTop: React.FC<BackToTopProps> = ({
     }
   }, [checkScroll, targetRef]);
 
-  const handleToTop = () => {
-    targetRef.current?.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+  const handleToBottom = () => {
+    if (targetRef.current) {
+      targetRef.current.scrollTo({
+        top: targetRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   if (!visible) return null;
 
   return (
     <div
-      onClick={handleToTop}
+      onClick={handleToBottom}
       style={{
         position: 'fixed',
         right: `${right}px`,
-        bottom: `${tabBarHeight + bottom}px`,
+        bottom: `${tabBarHeight + inputAreaHeight + bottom}px`,
         width: '42px',
         height: '42px',
         borderRadius: '50%',
@@ -64,11 +70,20 @@ const BackToTop: React.FC<BackToTopProps> = ({
         WebkitTapHighlightColor: 'transparent'
       }}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 15l-6-6-6 6"/>
+      <svg 
+        width="20" 
+        height="20" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="#666" 
+        strokeWidth="2.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <path d="M6 9l6 6 6-6"/>
       </svg>
     </div>
   );
 };
 
-export default BackToTop;
+export default BackToBottom;

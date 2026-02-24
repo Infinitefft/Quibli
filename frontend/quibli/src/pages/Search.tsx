@@ -9,6 +9,7 @@ import QuestionsItem from '@/components/question/QuestionsItem';
 import UserItem from '@/components/UserItem';
 import { SearchPostAndQuestion, SearchUser } from '@/api/search';
 import { useSearchResultStore } from '@/store/searchResult';
+import BackToTop from '@/components/BackToTop';
 
 export default function SearchPage() {
   const navigate = useNavigate();
@@ -286,6 +287,12 @@ export default function SearchPage() {
             </InfiniteScroll>
           </div>
         </div>
+        <BackToTop 
+          targetRef={
+            activeTab === 'posts' ? postsContainerRef : 
+            activeTab === 'questions' ? questionsContainerRef : usersContainerRef
+          } 
+        />
       </main>
     </div>
   );

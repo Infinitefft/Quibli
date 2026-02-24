@@ -3,7 +3,10 @@ import { Send, Sparkles, User, Bot, RotateCcw } from 'lucide-react';
 import { useChatBot, useAutoScroll } from '@/hooks/useChatBot';
 import ChatGreetings from '@/components/ui/ChatGreetings';
 import BottomNav from '@/components/BottomNav';
-import { useChatStore } from '@/store/chatStore'; // 新增导入
+import BackToBottom from '@/components/BackToBottom';
+import { useChatStore } from '@/store/chatStore';
+
+
 
 const HeaderLogo = () => (
   <div className="relative group select-none w-10 h-10 flex-shrink-0">
@@ -195,6 +198,9 @@ export default function Chat() {
           </div>
         </div>
           
+        {messages.length > 0 && (
+          <BackToBottom targetRef={scrollRef as React.RefObject<HTMLDivElement>} />
+        )}
         <BottomNav />
       </div>
     </>

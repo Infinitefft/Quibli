@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { User, Post, Question } from '@/types'; 
 import { getFollowedUsers, getFollowedPosts, getFollowedQuestions } from '@/api/user';
 import { useUserStore } from '@/store/user';
+import BackToTop from '@/components/BackToTop';
 
 // 缓存对象：保留页面切换后的状态
 const cache = {
@@ -269,6 +270,10 @@ export default function Following() {
             </PullToRefresh>
           </div>
         </div>
+        <BackToTop 
+          targetRef={activeTab === 'posts' ? postsContainerRef : questionsContainerRef} 
+          tabBarHeight={65} 
+        />
       </main>
     </div>
   );

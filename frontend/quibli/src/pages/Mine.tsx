@@ -211,7 +211,7 @@ export default function Mine() {
             onClick={() => navigate('/minelikes')}
           />
 
-          <MenuRow 
+          {/* <MenuRow 
             icon={GitBranch} 
             title="AI Git 工具" 
             subTitle="智能代码版本管理"
@@ -227,7 +227,7 @@ export default function Mine() {
             iconColor="text-blue-600"
             iconBg="bg-blue-50"
             onClick={() => navigate('/rag')} 
-          />
+          /> */}
 
           <div className="mt-8 mb-8">
             <Button 

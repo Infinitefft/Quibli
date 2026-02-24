@@ -10,6 +10,10 @@ import useHomePostStore from '@/store/homePost';
 import useHomeQuestionStore from '@/store/homeQuestion';
 import QuestionsItem from '@/components/question/QuestionsItem';
 import { useUserStore } from '@/store/user';
+import BackToTop from '@/components/BackToTop';
+
+
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -245,6 +249,10 @@ export default function Home() {
             </PullToRefresh>
           </div>
         </div>
+        <BackToTop 
+          targetRef={activeTab === 'posts' ? postsContainerRef : questionsContainerRef} 
+          tabBarHeight={65} 
+        />
       </main>
     </div>
   );
