@@ -2,14 +2,13 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import RouterConfig from './router/index.tsx';
-import { setupPostMock } from '../mock/postmock'
 
-if (import.meta.env.VITE_USE_POST_MOCK === 'true') {
-  setupPostMock()
+async function bootstrap() {
+  createRoot(document.getElementById('root')!).render(
+    <RouterConfig>
+      <App />
+    </RouterConfig>
+  )
 }
 
-createRoot(document.getElementById('root')!).render(
-  <RouterConfig>
-    <App />
-  </RouterConfig>
-)
+void bootstrap()

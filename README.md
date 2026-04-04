@@ -797,6 +797,8 @@ export default InfiniteScroll;
 
 ### 虚拟列表优化
 
+> pnpm add @tanstack/react-virtual
+
 > 非虚拟列表下，页面性能随数据量呈线性衰减：由于 DOM 节点随滚动不断堆积，导致浏览器在执行样式计算（Recalculate Style）和布局（Layout）时耗时指数级增长，最终在触发路由跳转或长列表滚动时，因主线程被秒级长任务（Long Task）阻塞而产生严重掉帧和交互假死
 
 可以参考性能图片：[没有虚拟列表前的性能](img\BeforeVisulList.png)

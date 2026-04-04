@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/SearchInput';
 import { Search } from 'lucide-react';
-import InfiniteScroll from '@/components/InfiniteScroll';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { refreshHomePosts, refreshHomeQuestions } from '@/store/homeRefresh';
 import PostsItem from '@/components/post/PostsItem';
@@ -11,6 +10,11 @@ import useHomeQuestionStore from '@/store/homeQuestion';
 import QuestionsItem from '@/components/question/QuestionsItem';
 import { useUserStore } from '@/store/user';
 import BackToTop from '@/components/BackToTop';
+import {
+  HomeTanStackList,
+  ESTIMATE_POST_ROW,
+  ESTIMATE_QUESTION_ROW,
+} from '@/components/HomeTanStackList';
 
 
 export default function Home() {
@@ -25,6 +29,11 @@ export default function Home() {
   const searchBarRef = useRef<HTMLDivElement>(null);
   const postsContainerRef = useRef<HTMLDivElement>(null);
   const questionsContainerRef = useRef<HTMLDivElement>(null);
+  /** 列表可视区高度（TanStack 滚动容器 height，两栏共用测量） */
+  const listViewportRef = useRef<HTMLDivElement>(null);
+  const [listViewportHeight, setListViewportHeight] = useState(() =>
+    typeof window !== 'undefined' ? Math.max(200, window.innerHeight - 145 - 96) : 400
+  );
 
   const lastScrollY = useRef(0);
   const currentTranslateY = useRef(0);
@@ -53,6 +62,16 @@ export default function Home() {
       }
     }
   }, [activeTab]);
+
+  useLayoutEffect(() => {
+    const el = listViewportRef.current;
+    if (!el) return;
+    const update = () => setListViewportHeight(el.getBoundingClientRect().height);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollTop = e.currentTarget.scrollTop;
@@ -207,49 +226,55 @@ export default function Home() {
           className="flex w-[200vw] h-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform"
           style={{ transform: activeTab === 'posts' ? 'translateX(0)' : 'translateX(-50%)' }}
         >
-          <div 
-            ref={postsContainerRef}
-            className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[145px] pb-24"
-            onScroll={handleScroll}
-          >
-            <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={postsContainerRef}>
-              <InfiniteScroll
-                onLoadMore={loadMorePosts}
-                hasMore={hasMorePosts}
-                isLoading={loadingPosts}
+          <div className="w-screen h-full flex flex-col min-h-0 pt-[145px] pb-24 box-border">
+            <div ref={listViewportRef} className="flex-1 min-h-0 flex flex-col">
+              <PullToRefresh
+                onRefresh={handleRefresh}
+                scrollableElementRef={postsContainerRef as React.RefObject<HTMLElement>}
               >
-                <div className="pb-4 bg-gray-50">
-                  {posts.map((post, index) => (
-                    <PostsItem key={`${post.id}-${index}`} post={post} />
-                  ))}
-                </div>
-              </InfiniteScroll>
-            </PullToRefresh>
+                <HomeTanStackList
+                  scrollRef={postsContainerRef}
+                  items={posts}
+                  estimateSize={ESTIMATE_POST_ROW}
+                  height={listViewportHeight}
+                  onScroll={handleScroll}
+                  hasMore={hasMorePosts}
+                  isLoading={loadingPosts}
+                  onLoadMore={loadMorePosts}
+                  renderItem={(post) => <PostsItem post={post} />}
+                  scrollClassName="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
+                />
+              </PullToRefresh>
+            </div>
           </div>
 
-          <div 
-            ref={questionsContainerRef}
-            className="w-screen h-full overflow-y-auto no-scrollbar overscroll-y-contain transform-gpu pt-[145px] pb-24"
-            onScroll={handleScroll}
-          >
-            <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={questionsContainerRef}>
-              <InfiniteScroll
-                onLoadMore={loadMoreQuestions}
-                hasMore={hasMoreQuestions}
-                isLoading={loadingQuestions}
+          <div className="w-screen h-full flex flex-col min-h-0 pt-[145px] pb-24 box-border">
+            <div className="flex-1 min-h-0 flex flex-col">
+              <PullToRefresh
+                onRefresh={handleRefresh}
+                scrollableElementRef={questionsContainerRef as React.RefObject<HTMLElement>}
               >
-                <div className="pb-4 bg-gray-50">
-                  {questions.map((question, index) => (
-                    <QuestionsItem key={`${question.id}-${index}`} question={question} />
-                  ))}
-                </div>
-              </InfiniteScroll>
-            </PullToRefresh>
+                <HomeTanStackList
+                  scrollRef={questionsContainerRef}
+                  items={questions}
+                  estimateSize={ESTIMATE_QUESTION_ROW}
+                  height={listViewportHeight}
+                  onScroll={handleScroll}
+                  hasMore={hasMoreQuestions}
+                  isLoading={loadingQuestions}
+                  onLoadMore={loadMoreQuestions}
+                  renderItem={(q) => <QuestionsItem question={q} />}
+                  scrollClassName="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
+                />
+              </PullToRefresh>
+            </div>
           </div>
         </div>
-        <BackToTop 
-          targetRef={activeTab === 'posts' ? postsContainerRef : questionsContainerRef} 
-          tabBarHeight={65} 
+        <BackToTop
+          targetRef={
+            (activeTab === 'posts' ? postsContainerRef : questionsContainerRef) as React.RefObject<HTMLDivElement>
+          }
+          tabBarHeight={65}
         />
       </main>
     </div>

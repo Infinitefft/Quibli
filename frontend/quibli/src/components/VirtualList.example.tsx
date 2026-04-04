@@ -5,7 +5,9 @@
  */
 
 import React from 'react';
-import VirtualList from '@/components/VirtualList';
+import VirtualList, {
+  SUGGESTED_ITEM_HEIGHT_POST,
+} from '@/components/VirtualList';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import PostsItem from '@/components/post/PostsItem';
 import useHomePostStore from '@/store/homePost';
@@ -19,11 +21,10 @@ function Example1_BasicUsage() {
   return (
     <VirtualList
       list={posts}
-      itemHeight={200}  // 假设每个 PostsItem 高度是 200px
-      containerHeight={window.innerHeight - 145}  // 减去 header 高度
-      renderItem={(post, index) => (
-        <PostsItem key={post.id} post={post} />
-      )}
+      itemHeight={SUGGESTED_ITEM_HEIGHT_POST}
+      containerHeight={window.innerHeight - 145}
+      getItemKey={(post) => post.id}
+      renderItem={(post) => <PostsItem post={post} />}
     />
   );
 }
@@ -35,22 +36,16 @@ function Example2_WithInfiniteScroll() {
   const { posts, loadMorePosts, hasMorePosts, loadingPosts } = useHomePostStore();
 
   return (
-    <div className="h-full overflow-y-auto">
-      <InfiniteScroll
-        onLoadMore={loadMorePosts}
-        hasMore={hasMorePosts}
-        isLoading={loadingPosts}
-      >
-        <VirtualList
-          list={posts}
-          itemHeight={200}
-          containerHeight={window.innerHeight - 145}
-          renderItem={(post, index) => (
-            <PostsItem key={post.id} post={post} />
-          )}
-        />
-      </InfiniteScroll>
-    </div>
+    <VirtualList
+      list={posts}
+      itemHeight={SUGGESTED_ITEM_HEIGHT_POST}
+      containerHeight={window.innerHeight - 145}
+      getItemKey={(post) => post.id}
+      renderItem={(post) => <PostsItem post={post} />}
+      hasMore={hasMorePosts}
+      isLoading={loadingPosts}
+      onLoadMore={loadMorePosts}
+    />
   );
 }
 
@@ -81,11 +76,10 @@ function Example3_HomeIntegration() {
         {/* 方案 A: 使用虚拟列表组件 */}
         <VirtualList
           list={posts}
-          itemHeight={200}
+          itemHeight={SUGGESTED_ITEM_HEIGHT_POST}
           containerHeight={window.innerHeight - 145}
-          renderItem={(post, index) => (
-            <PostsItem key={post.id} post={post} />
-          )}
+          getItemKey={(post) => post.id}
+          renderItem={(post) => <PostsItem post={post} />}
         />
 
         {/* 方案 B: 直接使用 Hook（更灵活） */}

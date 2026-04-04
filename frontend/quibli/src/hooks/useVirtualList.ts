@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 
 interface UseVirtualListOptions<T> {
   // 列表数据源
@@ -49,33 +49,25 @@ export function useVirtualList<T = any>(
 
   // 计算虚拟列表的各项参数
   const virtualData = useMemo(() => {
-    // 1. 计算总高度（用于撑开滚动条）
     const totalHeight = list.length * itemHeight;
 
-    // 2. 计算可见区域能容纳多少个 item
     const visibleCount = Math.ceil(containerHeight / itemHeight);
 
-    // 3. 计算起始索引（当前滚动到第几个 item）
     const startIndex = Math.floor(scrollTop / itemHeight);
 
-    // 4. 计算结束索引（考虑缓冲区）
-    // 上方缓冲区
     const startWithOverscan = Math.max(0, startIndex - overscan);
-    // 下方缓冲区
     const endWithOverscan = Math.min(
       list.length,
       startIndex + visibleCount + overscan
     );
 
-    // 5. 计算偏移量（可见区域相对于容器顶部的距离）
     const offsetY = startWithOverscan * itemHeight;
 
-    // 6. 获取可见区域的数据
     const visibleList = list
       .slice(startWithOverscan, endWithOverscan)
       .map((data, index) => ({
         data,
-        index: startWithOverscan + index, // 原始索引
+        index: startWithOverscan + index,
       }));
 
     return {
@@ -85,10 +77,8 @@ export function useVirtualList<T = any>(
     };
   }, [list, itemHeight, containerHeight, scrollTop, overscan]);
 
-  // 滚动事件处理
   const handleScroll = (e: React.UIEvent<HTMLElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    setScrollTop(scrollTop);
+    setScrollTop(e.currentTarget.scrollTop);
   };
 
   // 当列表数据变化时，重置滚动位置（可选）
