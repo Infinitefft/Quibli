@@ -137,107 +137,6 @@
   KeepAlive + AliveScope
 
 
-### 无限滚动组件
-- 分页加载
-- 监听哨兵 div 滚动事件，到达底部时加载更多数据
-
-``` ts
-import { useRef, useEffect } from 'react'
-
-interface InfiniteScrollProps {
-  hasMore: boolean;   // 是否还有更多数据
-  isLoading: boolean;  // 是否正在加载数据
-  onLoadMore: () => void;   // 加载更多数据
-  children: React.ReactNode;  // InfiniteScroll 通用的滚动功能，滚动过的具体内容 接受自定义
-}
-
-const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
-  hasMore,
-  onLoadMore,
-  isLoading = false,
-  children,
-}) => {
-
-  const sentinelRef = useRef<HTMLDivElement>(null);  
-  // react 不建议直接访问 dom ，使用 useRef 获取真实 DOM
-
-  useEffect(() => {
-
-    // IntersectionObserver：浏览器原生 Web API
-    // 作用：监听某个 DOM 元素是否进入视口
-    const observer = new IntersectionObserver(
-      (entries) => {
-
-        const entry = entries[0];
-
-        // isIntersecting：是否进入视口
-        // 只有满足：
-        // 进入视口
-        // 当前不在 loading
-        // 还有更多数据
-        // 才触发加载
-        if (
-          entry.isIntersecting &&
-          !isLoading &&
-          hasMore
-        ) {
-          onLoadMore();   // 调用加载更多数据函数
-        }
-      },
-      {
-        threshold: 0,  
-        // 0 表示：哨兵元素只要有 1px 进入视口就触发
-      }
-    );
-
-    const current = sentinelRef.current;
-    // current：哨兵 div 的真实 DOM 节点
-
-    if (current) {
-      observer.observe(current);
-      // 让 IntersectionObserver 开始观察这个 DOM 元素是否进入视口
-    }
-    // 卸载（路由切换）或组件销毁时
-    return () => {
-      if (current) {
-        observer.unobserve(current);
-        // 组件卸载时，取消观察哨兵元素
-      }
-    };
-    // 只在组件挂载时创建一次 observer
-    // 不依赖 isLoading / hasMore
-    // 避免 loading 变化导致 observer 反复创建
-  }, []);
-
-
-  return (
-    <>
-      {children}
-
-      {/* Intersection Observer 哨兵元素 */}
-      {/* 页面滚动到底部时，它会进入视口，从而触发 observer */}
-      <div ref={sentinelRef} className="h-4" />
-
-      {
-        isLoading && (
-          <div className="text-center py-4 text-sm text-muted-forgound">
-            加载中...
-          </div>
-        )
-      }
-      {
-        !hasMore && !isLoading && (
-          <div className="text-center  text-sm text-muted-foreground">
-            已经到底啦~
-          </div>
-        )
-      }
-    </>
-  );
-}
-
-export default InfiniteScroll;
-```
 
 
 
@@ -438,7 +337,7 @@ export default instance;
 ```
 
 - 后端使用 jwt 进行鉴权和颁发token
-```
+``` ts
 import { 
   Injectable,
   UnauthorizedException,  // UnauthorizedException 是 NestJS 内置的一个异常类
@@ -615,23 +514,18 @@ async avatar(nickname: string) {
       if (!statusResult.output) {
         throw new Error('Invalid response from DashScope API');
       }
-
       const status = statusResult.output.task_status;
-
       if (status === 'SUCCEEDED') {
         // 成功：返回第一张图片的 URL
         return statusResult.output.results[0].url;
       } 
-      
       if (status === 'FAILED' || status === 'UNKNOWN') {
         // 失败：抛出 API 返回的具体错误信息
         throw new Error(`Image generation failed: ${statusResult.output.message || 'Internal error'}`);
       }
-
       // 还在处理中，等待后重试
       await new Promise(resolve => setTimeout(resolve, INTERVAL));
     }
-
     // 超过 60 秒（30次 * 2秒）仍未完成，强制断开
     throw new Error('Image generation timed out after 60 seconds');
   }
@@ -639,70 +533,6 @@ async avatar(nickname: string) {
 
 
 
-
-### 发布功能
-- `zustand` 统一管理发布文章和问题
-- 学习到 `Partial<T>` : 把类型 T 中的所有属性都变成“可选的”（Optional）。
-``` ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Question, Post } from '@/types/index';
-
-
-interface PublishState {
-  // Partial<T> 的作用是把类型 T 中的所有属性都变成“可选的”（Optional）。
-  // 在 TypeScript 的严格模式下，如果你创建一个对象，必须一次性填满所有必填字段，否则会报错。
-  // 但是 Question, Post 接口还有创建时间等属性，所以使用 Partial 就不会报错了
-  currentQuestion: Partial<Question>;
-  currentPost: Partial<Post>;
-  setQuestionData: (data: Partial<Question>) => void;
-  // 更新文章草稿
-  setPostData: (data: Partial<Post>) => void;
-  
-  // 重置方法（发布成功或清空时调用）
-  resetQuestion: () => void;
-  resetPost: () => void;
-}
-
-
-
-export const usePublishStore = create<PublishState>()(
-    persist((set, get) => ({
-      currentQuestion: {
-        title: '',
-        tags: [],
-      },
-      currentPost: {
-        title: '',
-        content: '',
-        tags: [],
-      },
-      // state: 永远是上一次更新完成后的最终结果
-      setQuestionData: (data: Partial<Question>) => set((state: PublishState) => ({
-        currentQuestion: { 
-          ...state.currentQuestion, 
-          ...data 
-        }
-      })),
-
-      // 更新文章草稿
-      setPostData: (data: Partial<Post>) => set((state: PublishState) => ({
-        currentPost: { 
-          ...state.currentPost, 
-          ...data 
-        }
-      })),
-
-      // 重置（发布成功后调用）
-      resetQuestion: () => set({ currentQuestion: {} }),
-      resetPost: () => set({ currentPost: {} }),
-    }),
-    {
-      name: 'publish-store',
-    }
-  )
-)
-```
 
 
 ### 发布页面
@@ -747,211 +577,321 @@ export const truncateByWeight = (str: string, limit: number): string => {
 
 
 
-### 文章/问题详情页 评论区查询
-- 抽离评论查询逻辑到服务层
-``` ts
-async findComments(questionId: number, page: number = 1, limit: number = 10) {
-  const skip = (page - 1) * limit;
+### 无限滚动组件遇到的问题（闭包陷阱）
 
-  const comments = await this.prisma.comment.findMany({
-    where: {
-      questionId,
-      parentId: null, // 获取一级回答
-    },
-    skip,
-    take: limit,
-    orderBy: { createAt: 'desc' },
-    include: {
-      user: true,
-      replies: {
-        include: {
-          user: true,
-          parent: { include: { user: true } }, // 用于平铺时显示“回复了谁”
-        },
-        orderBy: { createAt: 'asc' },
-      },
-    },
-  });
+> 变量永远是组件挂载时的状态
+``` jsx
+import { useRef, useEffect } from 'react'
 
-  return comments.map((c) => ({
-    id: c.id,
-    content: c.content,
-    createdAt: c.createAt,
-    user: {
-      id: c.user.id,
-      nickname: c.user.nickname,
-      avatar: c.user.avatar,
-    },
-    replies: c.replies.map((r) => ({
-      id: r.id,
-      content: r.content,
-      createdAt: r.createAt,
-      user: {
-        id: r.user.id,
-        nickname: r.user.nickname,
-        avatar: r.user.avatar,
-      },
-      replyToUser: r.parent?.user?.nickname ?? null,
-    })),
-  }));
-}
-```
-
-
-### 手机 App 刷新逻辑
-``` ts
-import React, { useState, useRef, TouchEvent, RefObject, useEffect, useCallback } from 'react';
-
-interface PullToRefreshProps {
-  onRefresh: () => Promise<void>;
-  children: React.ReactNode;
-  scrollableElementRef?: RefObject<HTMLElement>;
+interface InfiniteScrollProps {
+  hasMore: boolean;   // 是否还有更多数据
+  isLoading: boolean;  // 是否正在加载数据
+  onLoadMore: () => void;   // 加载更多数据
+  children: React.ReactNode;  // InfiniteScroll 通用的滚动功能，滚动过的具体内容 接受自定义
 }
 
-export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, children, scrollableElementRef }) => {
-  const [startY, setStartY] = useState(0);
-  const [translateY, setTranslateY] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const isPulling = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // 阈值：下拉多少像素触发刷新
-  const THRESHOLD = 70;
-  // 最大下拉距离
-  const MAX_PULL = 120;
+const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
+  hasMore,
+  onLoadMore,
+  isLoading = false,
+  children,
+}) => {
 
-  const getScrollTop = useCallback(() => {
-    return scrollableElementRef?.current?.scrollTop ?? window.scrollY;
-  }, [scrollableElementRef]);
-
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    // 只有当页面滚动在顶部时才记录起点
-    if (isRefreshing) return;
-    if (getScrollTop() === 0) {
-      setStartY(e.touches[0].clientY);
-      isPulling.current = true;
-    } else {
-      isPulling.current = false;
-    }
-  };
-
-  const handleTouchMove = useCallback((e: globalThis.TouchEvent) => {
-    // 如果不在顶部或者正在刷新，不处理
-    if (!isPulling.current || isRefreshing) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startY;
-
-    if (getScrollTop() > 5) { // Add a small tolerance
-      isPulling.current = false;
-      setTranslateY(0);
-      return;
-    }
-
-    // 只有向下拉动才处理
-    if (diff > 0) {
-      e.preventDefault(); // Prevent parent scroll, now safe to call
-      // 增加阻尼感 (diff * 0.4)
-      const pullDistance = Math.min(diff * 0.4, MAX_PULL);
-      setTranslateY(pullDistance);
-    } else {
-      setTranslateY(0);
-    }
-  }, [isRefreshing, startY, getScrollTop]);
+  const sentinelRef = useRef<HTMLDivElement>(null);  
+  // react 不建议直接访问 dom ，使用 useRef 获取真实 DOM
 
   useEffect(() => {
-    const element = containerRef.current;
-    if (!element) return;
 
-    const handleMove = (e: globalThis.TouchEvent) => {
-      handleTouchMove(e);
-    };
-
-    element.addEventListener('touchmove', handleMove, { passive: false });
-
-    return () => {
-      element.removeEventListener('touchmove', handleMove);
-    };
-  }, [handleTouchMove]);
-
-  const handleTouchEnd = async () => {
-    if (!isPulling.current || isRefreshing) return;
-    isPulling.current = false;
-
-    if (translateY > THRESHOLD) {
-      // 触发刷新
-      setIsRefreshing(true);
-      setTranslateY(THRESHOLD); // 停留在加载位置
-
-      try {
-        await onRefresh();
-      } finally {
-        // 刷新完成，延时收起
-        setTimeout(() => {
-          setIsRefreshing(false);
-          setTranslateY(0);
-          setStartY(0);
-        }, 500);
+    // IntersectionObserver：浏览器原生 Web API
+    // 作用：监听某个 DOM 元素是否进入视口
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        // isIntersecting：是否进入视口
+        // 只有满足：
+        // 进入视口
+        // 当前不在 loading
+        // 还有更多数据
+        // 才触发加载
+        if (
+          entry.isIntersecting &&
+          !isLoading &&
+          hasMore
+        ) {
+          onLoadMore();   // 调用加载更多数据函数
+        }
+      },
+      {
+        threshold: 0,  
+        // 0 表示：哨兵元素只要有 1px 进入视口就触发
       }
-    } else {
-      // 未达到阈值，回弹
-      setTranslateY(0);
-      setStartY(0);
+    );
+
+    const current = sentinelRef.current;
+    // current：哨兵 div 的真实 DOM 节点
+
+    if (current) {
+      observer.observe(current);
+      // 让 IntersectionObserver 开始观察这个 DOM 元素是否进入视口
     }
-  };
+    // 卸载（路由切换）或组件销毁时
+    return () => {
+      if (current) {
+        observer.unobserve(current);
+        // 组件卸载时，取消观察哨兵元素
+      }
+    };
+    // 只在组件挂载时创建一次 observer
+    // 不依赖 isLoading / hasMore
+    // 避免 loading 变化导致 observer 反复创建
+  }, []);  // 没有依赖项，变量永远是组件挂载时的状态
+
 
   return (
-    <div
-      ref={containerRef}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      style={{
-        position: 'relative',
-        backgroundColor: 'inherit', 
-        touchAction: 'pan-y',
-        transform: `translateY(${translateY}px)`,
-        transition: isRefreshing ? 'transform 0.2s' : 'transform 0.3s ease-out',
-      }}
-    >
-      {/* 下拉加载指示器 */}
-      <div
-        style={{
-          position: 'absolute',
-          top: `-${THRESHOLD}px`,
-          left: 0,
-          width: '100%',
-          height: `${THRESHOLD}px`,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        {isRefreshing ? (
-          <div className="spinner" style={{
-            width: '24px',
-            height: '24px',
-            border: '3px solid #e0e0e0',
-            borderTopColor: '#3498db',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-        ) : (
-          <span style={{ color: '#888', fontSize: '14px', opacity: translateY / THRESHOLD }}>
-            {translateY > THRESHOLD ? '释放刷新' : '下拉刷新'}
-          </span>
-        )}
-      </div>
-
-      {/* 注入简单的动画样式 */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      {/* 内容区域 */}
+    <>
       {children}
-    </div>
+
+      {/* Intersection Observer 哨兵元素 */}
+      {/* 页面滚动到底部时，它会进入视口，从而触发 observer */}
+      <div ref={sentinelRef} className="h-4" />
+
+      {
+        isLoading && (
+          <div className="text-center py-4 text-sm text-muted-forgound">
+            加载中...
+          </div>
+        )
+      }
+      {
+        !hasMore && !isLoading && (
+          <div className="text-center  text-sm text-muted-foreground">
+            已经到底啦~
+          </div>
+        )
+      }
+    </>
   );
-};
+}
+
+export default InfiniteScroll;
 ```
+修复1：添加依赖项，但是，这将导致 observer 在 isLoading 或 hasMore 每次变化时都被重新创建，这可能会带来性能问题，并且注释中也提到了“避免 loading 变化导致 observer 反复创建”。
+
+最佳实践：使用 `useRef` 来存储 `isLoading` 和 `hasMore` 的最新值。 这样， `useEffect` 的依赖数组`仍然可以是空的`，但 `observer` 的回调函数可以通过 `ref` 访问到最新的值。这种方法在需要避免 `useEffect` **频繁重新运行**，但又需要访问最新 prop 值时非常有用。避免了 Observer 对象的重复装卸。
+
+``` jsx
+import { useRef, useEffect } from 'react'
+
+interface InfiniteScrollProps {
+  hasMore: boolean;   // 是否还有更多数据
+  isLoading: boolean;  // 是否正在加载数据
+  onLoadMore: () => void;   // 加载更多数据
+  children: React.ReactNode;  // InfiniteScroll 通用的滚动功能，滚动过的具体内容 接受自定义
+}
+
+const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
+  hasMore,
+  onLoadMore,
+  isLoading = false,
+  children,
+}) => {
+  
+  const sentinelRef = useRef<HTMLDivElement>(null);  
+  // react 不建议直接访问 dom ，使用 useRef 获取真实 DOM
+  
+  // 使用 useRef 保存最新的 props 值，避免闭包陷阱
+  // 闭包陷阱：IntersectionObserver 回调函数会捕获创建时的变量值
+  // 使用 ref 可以让回调函数始终访问到最新值
+  const hasMoreRef = useRef(hasMore);
+  const isLoadingRef = useRef(isLoading);
+  const onLoadMoreRef = useRef(onLoadMore);
+
+  // 每次渲染时同步更新 ref 的值
+  // 无依赖项的 useEffect 会在每次渲染后执行useEffect 
+  // 保证了赋值动作发生在 Commit 阶段。
+  // 含义：只有当 React 确定“这次渲染成功了，屏幕已经更新了”，它才会去跑 useEffect 里的赋值。
+  // 结果：这保证了 isLoadingRef.current 里的值，永远与当前屏幕上正在显示的那个 isLoading 状态保持一致。
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+    isLoadingRef.current = isLoading;
+    onLoadMoreRef.current = onLoadMore;
+  });
+
+  useEffect(() => {
+
+    // IntersectionObserver：浏览器原生 Web API
+    // 作用：监听某个 DOM 元素是否进入视口
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        // isIntersecting：是否进入视口
+        // 只有满足：
+        // 进入视口
+        // 当前不在 loading
+        // 还有更多数据
+        // 才触发加载
+        if (
+          entry.isIntersecting &&
+          !isLoadingRef.current &&
+          hasMoreRef.current
+        ) {
+          onLoadMoreRef.current();   // 调用加载更多数据函数
+        }
+      },
+      {
+        threshold: 0,  
+        // 0 表示：哨兵元素只要有 1px 进入视口就触发
+      }
+    );
+
+    const current = sentinelRef.current;
+    // current：哨兵 div 的真实 DOM 节点
+
+    if (current) {
+      observer.observe(current);
+      // 让 IntersectionObserver 开始观察这个 DOM 元素是否进入视口
+    }
+    // 卸载（路由切换）或组件销毁时
+    return () => {
+      if (current) {
+        observer.unobserve(current);
+        // 组件卸载时，取消观察哨兵元素
+      }
+    };
+    // 依赖项为空数组，observer 只在组件挂载时创建一次
+    // 避免 loading 变化导致 observer 反复创建
+    // 通过 ref.current 访问最新的 props 值，避免闭包陷阱
+  }, []);
+
+
+  return (
+    <>
+      {children}
+
+      {/* Intersection Observer 哨兵元素 */}
+      {/* 页面滚动到底部时，它会进入视口，从而触发 observer */}
+      <div ref={sentinelRef} className="h-4" />
+
+      {
+        isLoading && (
+          <div className="text-center py-4 text-sm text-muted-forgound">
+            加载中...
+          </div>
+        )
+      }
+      {
+        !hasMore && !isLoading && (
+          <div className="text-center  text-sm text-muted-foreground">
+            已经到底啦~
+          </div>
+        )
+      }
+    </>
+  );
+}
+
+export default InfiniteScroll;
+```
+
+
+
+### 虚拟列表优化
+
+> 非虚拟列表下，页面性能随数据量呈线性衰减：由于 DOM 节点随滚动不断堆积，导致浏览器在执行样式计算（Recalculate Style）和布局（Layout）时耗时指数级增长，最终在触发路由跳转或长列表滚动时，因主线程被秒级长任务（Long Task）阻塞而产生严重掉帧和交互假死
+
+可以参考性能图片：[没有虚拟列表前的性能](img\BeforeVisulList.png)
+
+
+
+
+
+
+
+可优化的点：
+你已想到的两个方向（都很好）
+1. 虚拟列表（Virtual List）
+当前问题：首页、搜索、关注页的帖子/问题列表全量渲染 DOM，列表越长内存和重绘成本越高。
+
+自己手写而非直接用 react-virtuoso，展示底层原理理解
+结合你已有的 InfiniteScroll + PullToRefresh，形成完整的**「虚拟滚动 + 无限加载 + 下拉刷新」**三合一方案
+核心难点：
+
+动态高度：帖子卡片有图片、不同长度文本，高度不一致。需要先渲染测量真实高度再缓存（ResizeObserver），而非固定行高
+滚动锚定：上方 item 高度变化时保持视口内容不跳动
+与 KeepAlive 协作：首页用了 react-activation 缓存，虚拟列表的滚动位置恢复需要特殊处理
+面试时可以说的术语：可视区域计算、overscan（上下缓冲区）、ResizeObserver 动态测高、滚动锚定（scroll anchoring）、transform 偏移替代 padding 占位
+
+2. 文章级 RAG（Retrieval-Augmented Generation）
+当前状态：你的 AI 聊天是纯 LLM 对话，没有任何检索增强；向量搜索只用在搜索列表页，没有接入对话。
+
+
+前端主导的 RAG 交互设计：用户在文章详情页可以针对这篇文章提问，AI 结合文章内容回答
+涉及全栈链路：前端传 postId → 后端取文章 embedding → 检索相关段落 → 注入 system prompt → 流式返回
+核心难点：
+
+Context Window 管理：文章可能很长，需要截断或分块（chunking），选择最相关的片段注入 prompt
+流式 SSE：当前用 fetch + ReadableStream，可以升级为标准 SSE（EventSource 或 @microsoft/fetch-event-source），面试时可以对比两种方案
+前端状态设计：每篇文章的对话上下文独立管理，与全局 AI 聊天共存
+简易实现方案：不需要复杂的向量分块，可以直接把文章的 title + content + tags 作为 system prompt 的 context，API 新增一个 /ai/article-chat 端点，前端在详情页加一个悬浮的 AI 问答入口。
+
+二、我额外建议的高价值优化点
+3. 修复 InfiniteScroll 的闭包陷阱（必修，面试高频题）
+当前 Bug：你的 InfiniteScroll 组件 useEffect 依赖为空数组 []，IntersectionObserver 的回调捕获的是首次渲染时的 isLoading、hasMore、onLoadMore，之后状态变化后回调仍然使用旧值。
+
+
+修复方案：用 useRef 保存最新的回调和状态：
+
+const callbackRef = useRef(onLoadMore);
+const stateRef = useRef({ isLoading, hasMore });
+useEffect(() => {
+  callbackRef.current = onLoadMore;
+  stateRef.current = { isLoading, hasMore };
+});
+useEffect(() => {
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !stateRef.current.isLoading && stateRef.current.hasMore) {
+      callbackRef.current();
+    }
+  }, { threshold: 0 });
+  // ...
+}, []); // observer 只创建一次，但始终读取最新状态
+面试时可以说：为什么 useEffect 闭包会过期、useRef 为什么能解决、与 useCallback 的区别、IntersectionObserver vs scroll 事件的性能差异。
+
+4. 请求竞态处理（AbortController）
+当前问题：搜索页切换 Tab、快速翻页时，旧请求可能比新请求晚返回，导致数据错乱（Race Condition）。
+
+
+实现方案：
+
+在 useEffect 的 cleanup 中 abort 上一次请求
+axios 支持 signal: controller.signal
+搜索联想的防抖 + AbortController 组合使用
+useEffect(() => {
+  const controller = new AbortController();
+  fetchData({ signal: controller.signal });
+  return () => controller.abort();
+}, [keyword, activeTab]);
+5. 骨架屏（Skeleton Screen）
+当前状态：加载时只有文字「加载中...」或空白。
+
+
+实现：利用你已有的 shadcn Skeleton 组件，为 PostsItem / QuestionsItem 做对应的骨架版本，首屏和加载更多时展示。工作量小但视觉效果提升大。
+
+6. 双 Token 无感刷新的完善（已有雏形，值得打磨）
+当前状态：api/config.ts 已实现了 401 拦截 → 刷新 → 重放队列，思路正确。
+
+
+多请求并发刷新：当前 isRefreshing 锁 + 队列已覆盖，但刷新失败时队列没有 reject，排队的请求会悬挂
+多 Tab 同步：一个 Tab 刷新后，通过 BroadcastChannel 或 storage event 通知其他 Tab 更新 token
+refresh token 过期：平滑跳转登录页 + 保存当前路由，登录后自动回到原页面
+三、优先级排序建议
+按面试性价比（投入时间 vs 面试效果）排序：
+
+优先级	优化项	投入	面试效果	原因
+P0	修复 InfiniteScroll 闭包	0.5h	极高	闭包陷阱是必考题，改完就是现成案例
+P0	虚拟列表	2-3天	极高	性能优化核心，手写 vs 库的取舍能讲很多
+P1	文章级 RAG	1-2天	很高	AI + 全栈能力展示，当下热点
+P1	请求竞态 AbortController	1h	很高	异步处理是前端核心能力
+P2	骨架屏	2h	中高	UX 意识，工作量小
+P2	双 Token 刷新完善	3h	中高	鉴权方案深度
+你想从哪个开始？我可以直接帮你动手实现。如果要同时推进多个，我建议先从 P0 的 InfiniteScroll 闭包修复开始（最快见效），然后进入虚拟列表。

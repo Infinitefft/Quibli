@@ -13,9 +13,27 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   isLoading = false,
   children,
 }) => {
-
+  
   const sentinelRef = useRef<HTMLDivElement>(null);  
   // react 不建议直接访问 dom ，使用 useRef 获取真实 DOM
+  
+  // 使用 useRef 保存最新的 props 值，避免闭包陷阱
+  // 闭包陷阱：IntersectionObserver 回调函数会捕获创建时的变量值
+  // 使用 ref 可以让回调函数始终访问到最新值
+  const hasMoreRef = useRef(hasMore);
+  const isLoadingRef = useRef(isLoading);
+  const onLoadMoreRef = useRef(onLoadMore);
+
+  // 每次渲染时同步更新 ref 的值
+  // 无依赖项的 useEffect 会在每次渲染后执行useEffect 
+  // 保证了赋值动作发生在 Commit 阶段。
+  // 含义：只有当 React 确定“这次渲染成功了，屏幕已经更新了”，它才会去跑 useEffect 里的赋值。
+  // 结果：这保证了 isLoadingRef.current 里的值，永远与当前屏幕上正在显示的那个 isLoading 状态保持一致。
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+    isLoadingRef.current = isLoading;
+    onLoadMoreRef.current = onLoadMore;
+  });
 
   useEffect(() => {
 
@@ -23,9 +41,7 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
     // 作用：监听某个 DOM 元素是否进入视口
     const observer = new IntersectionObserver(
       (entries) => {
-
         const entry = entries[0];
-
         // isIntersecting：是否进入视口
         // 只有满足：
         // 进入视口
@@ -34,10 +50,10 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
         // 才触发加载
         if (
           entry.isIntersecting &&
-          !isLoading &&
-          hasMore
+          !isLoadingRef.current &&
+          hasMoreRef.current
         ) {
-          onLoadMore();   // 调用加载更多数据函数
+          onLoadMoreRef.current();   // 调用加载更多数据函数
         }
       },
       {
@@ -60,9 +76,9 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
         // 组件卸载时，取消观察哨兵元素
       }
     };
-    // 只在组件挂载时创建一次 observer
-    // 不依赖 isLoading / hasMore
+    // 依赖项为空数组，observer 只在组件挂载时创建一次
     // 避免 loading 变化导致 observer 反复创建
+    // 通过 ref.current 访问最新的 props 值，避免闭包陷阱
   }, []);
 
 

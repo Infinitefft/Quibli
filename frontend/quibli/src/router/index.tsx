@@ -37,6 +37,7 @@ const UserPostsInfomations = lazy(() => import('@/components/userpublish/UserPos
 const UserPublishPage = lazy(() => import('@/components/userpublish/UserPublishPage'));
 const FollowingInformation = lazy(() => import('@/components/userFollow/FollowingInformation'));
 const UserFollowPage = lazy(() => import('@/components/userFollow/UserFollowPage'));
+const VirtualListDemo = lazy(() => import('@/pages/VirtualListDemo'));
 
 
 export default function RouterConfig({children} : {children: React.ReactNode}) {
@@ -55,6 +56,8 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
             <Route path="/search" element={<Search />} />
             <Route path="/minefavorites" element={<MineFavorites />} />
             <Route path="/minelikes" element={<MineLikes />} />
+
+            <Route path="/virtuallistdemo" element={<VirtualListDemo />} />
 
 
             {/* 用户发布文章/问题列表 */}

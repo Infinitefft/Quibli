@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useUserStore } from '@/store/user';
 
 const instance = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'https://dodge-scenario-accompanying-hand.trycloudflare.com') + '/api',
+  baseURL: 'http://localhost:3001/api',
 });
 
 instance.interceptors.request.use(config => {

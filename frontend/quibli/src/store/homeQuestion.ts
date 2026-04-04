@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import type { Post } from '@/types/index';
 import type { Question } from '@/types/index';
 import { fetchQuestions } from '@/api/question';
 

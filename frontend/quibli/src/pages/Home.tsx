@@ -13,8 +13,6 @@ import { useUserStore } from '@/store/user';
 import BackToTop from '@/components/BackToTop';
 
 
-
-
 export default function Home() {
   const navigate = useNavigate();
   const { loadingPosts, loadMorePosts, posts, hasMorePosts } = useHomePostStore();
