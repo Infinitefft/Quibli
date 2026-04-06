@@ -15,8 +15,23 @@ import {
   ESTIMATE_POST_ROW,
   ESTIMATE_QUESTION_ROW,
 } from '@/components/HomeTanStackList';
+import { HomeFeedSkeleton } from '@/components/HomeFeedSkeleton';
 
-
+/**
+ * 首页布局要点（读代码时按这个顺序理解）：
+ *
+ * 1) 顶栏 fixed，正文区域用 pt-[145px] 把列表顶到搜索栏/Tab 下方，避免被遮挡。
+ *
+ * 2) 文章 / 问答两栏并排（总宽 200vw），通过外层 translateX 切换「显示哪一栏」，两栏 DOM 都挂载，
+ *    各自一套滚动与数据，切换 Tab 不会丢另一栏的 scrollTop。
+ *
+ * 3) 列表区域：PullToRefresh 需要「谁在滚动」的 DOM → scrollableElementRef 指向各栏的滚动容器；
+ *    HomeTanStackList 把同一 ref 挂在 overflow 的 div 上，内部再用 TanStack 做虚拟化。
+ *
+ * 4) listViewportHeight：虚拟列表必须知道「视口高度」才能算一屏能摆几行，用 ResizeObserver 量 flex 分配后的高度。
+ *
+ * 5) handleScroll + updateHeader：与虚拟列表无关，是给顶栏随列表上滑收起/搜索条渐隐用的（增量算 translate）。
+ */
 export default function Home() {
   const navigate = useNavigate();
   const { loadingPosts, loadMorePosts, posts, hasMorePosts } = useHomePostStore();
@@ -27,15 +42,19 @@ export default function Home() {
 
   const headerRef = useRef<HTMLElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  /** 文章列表滚动容器：overflow 在此 div 上，供虚拟列表、下拉刷新、回顶、handleScroll 共用 */
   const postsContainerRef = useRef<HTMLDivElement>(null);
+  /** 问答列表滚动容器，职责同上 */
   const questionsContainerRef = useRef<HTMLDivElement>(null);
-  /** 列表可视区高度（TanStack 滚动容器 height，两栏共用测量） */
+  /** 仅用于量高度：内层 flex-1 分配到的「列表可视区」像素高，传给 HomeTanStackList 的 height */
   const listViewportRef = useRef<HTMLDivElement>(null);
   const [listViewportHeight, setListViewportHeight] = useState(() =>
     typeof window !== 'undefined' ? Math.max(200, window.innerHeight - 145 - 96) : 400
   );
 
+  /** 上一次 scrollTop，用于算本次滚动的 delta，驱动顶栏位移 */
   const lastScrollY = useRef(0);
+  /** 顶栏当前 translateY（负值表示上移隐藏搜索条区域） */
   const currentTranslateY = useRef(0);
 
   const updateHeader = (translate: number) => {
@@ -52,6 +71,7 @@ export default function Home() {
     }
   };
 
+  // 切换 Tab 时：把「当前栏滚动位置」同步到 lastScrollY，避免顶栏位移从上一次另一栏的值跳变
   useEffect(() => {
     const container = activeTab === 'posts' ? postsContainerRef.current : questionsContainerRef.current;
     if (container) {
@@ -63,6 +83,7 @@ export default function Home() {
     }
   }, [activeTab]);
 
+  // 首屏及窗口尺寸变化时更新列表可视高度；虚拟列表依赖稳定的 height 才能正确计算可见行数
   useLayoutEffect(() => {
     const el = listViewportRef.current;
     if (!el) return;
@@ -73,6 +94,7 @@ export default function Home() {
     return () => ro.disconnect();
   }, []);
 
+  // 两栏共用同一套逻辑：根据滚动增量更新顶栏（与 TanStack 内部如何切片 DOM 无关）
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollTop = e.currentTarget.scrollTop;
     
@@ -135,6 +157,12 @@ export default function Home() {
       await refreshHomeQuestions();
     }
   };
+
+  /** 首屏尚无数据：用骨架屏占位（loading 或与 store 默认 hasMore 组合，避免首帧空白） */
+  const showPostsSkeleton =
+    posts.length === 0 && (loadingPosts || hasMorePosts);
+  const showQuestionsSkeleton =
+    questions.length === 0 && (loadingQuestions || hasMoreQuestions);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col overflow-hidden">
@@ -222,50 +250,75 @@ export default function Home() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        {/* 双栏「轮播」：两栏各一屏宽，整体左移半屏即切换到问答 */}
         <div 
           className="flex w-[200vw] h-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform"
           style={{ transform: activeTab === 'posts' ? 'translateX(0)' : 'translateX(-50%)' }}
         >
+          {/* ——— 文章栏 ——— */}
           <div className="w-screen h-full flex flex-col min-h-0 pt-[145px] pb-24 box-border">
             <div ref={listViewportRef} className="flex-1 min-h-0 flex flex-col">
               <PullToRefresh
                 onRefresh={handleRefresh}
                 scrollableElementRef={postsContainerRef as React.RefObject<HTMLElement>}
               >
-                <HomeTanStackList
-                  scrollRef={postsContainerRef}
-                  items={posts}
-                  estimateSize={ESTIMATE_POST_ROW}
-                  height={listViewportHeight}
-                  onScroll={handleScroll}
-                  hasMore={hasMorePosts}
-                  isLoading={loadingPosts}
-                  onLoadMore={loadMorePosts}
-                  renderItem={(post) => <PostsItem post={post} />}
-                  scrollClassName="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
-                />
+                {showPostsSkeleton ? (
+                  <div
+                    ref={postsContainerRef}
+                    className="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
+                    style={{ height: listViewportHeight, overflowY: 'auto' }}
+                    onScroll={handleScroll}
+                  >
+                    <HomeFeedSkeleton variant="posts" />
+                  </div>
+                ) : (
+                  <HomeTanStackList
+                    scrollRef={postsContainerRef}
+                    items={posts}
+                    estimateSize={ESTIMATE_POST_ROW}
+                    height={listViewportHeight}
+                    onScroll={handleScroll}
+                    hasMore={hasMorePosts}
+                    isLoading={loadingPosts}
+                    onLoadMore={loadMorePosts}
+                    renderItem={(post) => <PostsItem post={post} />}
+                    scrollClassName="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
+                  />
+                )}
               </PullToRefresh>
             </div>
           </div>
 
+          {/* ——— 问答栏（结构与文章栏对称） ——— */}
           <div className="w-screen h-full flex flex-col min-h-0 pt-[145px] pb-24 box-border">
             <div className="flex-1 min-h-0 flex flex-col">
               <PullToRefresh
                 onRefresh={handleRefresh}
                 scrollableElementRef={questionsContainerRef as React.RefObject<HTMLElement>}
               >
-                <HomeTanStackList
-                  scrollRef={questionsContainerRef}
-                  items={questions}
-                  estimateSize={ESTIMATE_QUESTION_ROW}
-                  height={listViewportHeight}
-                  onScroll={handleScroll}
-                  hasMore={hasMoreQuestions}
-                  isLoading={loadingQuestions}
-                  onLoadMore={loadMoreQuestions}
-                  renderItem={(q) => <QuestionsItem question={q} />}
-                  scrollClassName="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
-                />
+                {showQuestionsSkeleton ? (
+                  <div
+                    ref={questionsContainerRef}
+                    className="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
+                    style={{ height: listViewportHeight, overflowY: 'auto' }}
+                    onScroll={handleScroll}
+                  >
+                    <HomeFeedSkeleton variant="questions" />
+                  </div>
+                ) : (
+                  <HomeTanStackList
+                    scrollRef={questionsContainerRef}
+                    items={questions}
+                    estimateSize={ESTIMATE_QUESTION_ROW}
+                    height={listViewportHeight}
+                    onScroll={handleScroll}
+                    hasMore={hasMoreQuestions}
+                    isLoading={loadingQuestions}
+                    onLoadMore={loadMoreQuestions}
+                    renderItem={(q) => <QuestionsItem question={q} />}
+                    scrollClassName="no-scrollbar overscroll-y-contain transform-gpu w-full min-h-0"
+                  />
+                )}
               </PullToRefresh>
             </div>
           </div>

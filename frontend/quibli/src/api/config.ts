@@ -5,6 +5,31 @@ const instance = axios.create({
   baseURL: 'http://localhost:3001/api',
 });
 
+/** 用 refresh_token 换新的 access（与拦截器共用，不落盘 access，仅写入 zustand 内存态） */
+export async function refreshSessionWithRefreshToken(): Promise<string | null> {
+  const { refreshToken } = useUserStore.getState();
+  if (!refreshToken) return null;
+  try {
+    const res = await axios.post(`${instance.defaults.baseURL}/auth/refresh`, {
+      refresh_token: refreshToken,
+    });
+    const { access_token, refresh_token } = res.data;
+    useUserStore.setState({
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      isLogin: true,
+    });
+    return access_token;
+  } catch {
+    useUserStore.setState({
+      isLogin: false,
+      accessToken: null,
+      refreshToken: null,
+    });
+    return null;
+  }
+}
+
 instance.interceptors.request.use(config => {
   const token = useUserStore.getState().accessToken;
   if (token) {
@@ -35,32 +60,16 @@ instance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { refreshToken } = useUserStore.getState();
-        if (refreshToken) {
-          // ✅ 关键：使用原始 axios 发送请求，避免进入 instance 的死循环
-          const res = await axios.post(`${instance.defaults.baseURL}/auth/refresh`, {
-            refresh_token: refreshToken
-          });
-
-          const { access_token, refresh_token } = res.data;
-
-          useUserStore.setState({
-            accessToken: access_token,
-            refreshToken: refresh_token,
-            isLogin: true,
-          });
-
+        const access_token = await refreshSessionWithRefreshToken();
+        if (access_token) {
           requestQueue.forEach((callback) => callback(access_token));
           requestQueue = [];
 
           config.headers.Authorization = `Bearer ${access_token}`;
           return instance(config);
         }
-      } catch (refreshErr) {
-        // 如果 refresh_token 也过期了，清空状态并跳转
-        useUserStore.setState({ isLogin: false, accessToken: null, refreshToken: null });
         window.location.href = '/login';
-        return Promise.reject(refreshErr);
+        return Promise.reject(err);
       } finally {
         isRefreshing = false;
       }

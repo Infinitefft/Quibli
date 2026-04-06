@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getPostDetails, getPostComments } from '@/api/post'
-import CommentSection from '@/components/CommentSection'
 import type { Post } from '@/types'
 import { useUserStore } from '@/store/user'
 
@@ -144,10 +143,6 @@ export default function PostDetail() {
           ))}
         </div>
 
-        <CommentSection 
-          comments={comments}
-          total={post.totalComments} 
-        />
       </main>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-4 z-50">

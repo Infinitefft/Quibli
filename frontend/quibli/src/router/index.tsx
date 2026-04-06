@@ -76,7 +76,18 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
 
 
             <Route path="/" element={<MainLayout />}>
-              <Route path="" element={<Home />} />
+              {/*
+                首页单独内层 Suspense：懒加载 chunk 时不走外层 fallback={<Loading />}，
+                由首页自己的骨架屏等承担首屏（fallback={null} 避免全屏 Loading）。
+              */}
+              <Route
+                index
+                element={
+                  <Suspense fallback={null}>
+                    <Home />
+                  </Suspense>
+                }
+              />
               <Route path="chat" element={<Chat />} />
               <Route path="publish" element={<Publish />} />
               <Route path="following" element={<Following />} />

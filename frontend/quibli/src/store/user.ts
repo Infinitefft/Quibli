@@ -13,6 +13,7 @@ import {
   toggleFavoriteQuestion 
 } from '@/api/user';
 
+
 interface UserStore {
   user: User | null;
   isLogin: boolean;
@@ -197,11 +198,18 @@ export const useUserStore = create<UserStore>() (
   }),
   {
     name: 'quibli-user-store',
+    // accessToken 仅驻内存，不落盘，降低 XSS 窃取短期凭证的风险
     partialize: (state) => ({
       user: state.user,
-      accessToken: state.accessToken,
       refreshToken: state.refreshToken,
       isLogin: state.isLogin,
-    })
+    }),
+    merge: (persistedState, currentState) => ({
+      ...currentState,
+      ...(typeof persistedState === 'object' && persistedState !== null
+        ? (persistedState as Partial<UserStore>)
+        : {}),
+      accessToken: null,
+    }),
   })
 )
