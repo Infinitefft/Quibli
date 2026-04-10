@@ -15,13 +15,27 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
 
+  const isProd = process.env.NODE_ENV === 'production';
+
   app.enableCors({
-    origin: [
-      'https://quibli.top',
-      'https://www.quibli.top',
-      'https://quibli.vercel.app', // 允许你 Vercel 的前端域名
-      'http://localhost:5173'      // 允许本地开发环境
-    ],
+    origin: (origin, callback) => {
+      // 无 Origin（如 Postman、服务端请求）直接放行
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const prodOrigins = new Set([
+        'https://quibli.top',
+        'https://www.quibli.top',
+        'https://quibli.vercel.app',
+      ]);
+      const isLocalDev = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+      if ((!isProd && isLocalDev) || prodOrigins.has(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`), false);
+      }
+    },
     credentials: true,
   });
 

@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { useUserStore } from '@/store/user';
 
+// 开发默认 /api 走 Vite 代理；生产可在构建时注入 VITE_API_BASE（完整 API 根路径）
+const rawBase = import.meta.env.VITE_API_BASE?.trim() || '/api';
+const apiBase = rawBase.replace(/\/$/, '');
+
 const instance = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: apiBase,
 });
 
 /** 用 refresh_token 换新的 access（与拦截器共用，不落盘 access，仅写入 zustand 内存态） */

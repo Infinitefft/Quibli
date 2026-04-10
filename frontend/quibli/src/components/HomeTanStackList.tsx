@@ -16,7 +16,7 @@ import InfiniteScroll from '@/components/InfiniteScroll';
 /** 与 PostsItem 卡片+间距大致匹配（px） */
 export const ESTIMATE_POST_ROW = 280;
 /** 与 QuestionsItem 大致匹配（px） */
-export const ESTIMATE_QUESTION_ROW = 300;
+export const ESTIMATE_QUESTION_ROW = 200;
 
 type HomeTanStackListProps<T> = {
   scrollRef: React.RefObject<HTMLDivElement | null>;

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { getQuestionDetails, getQuestionComments } from '@/api/question'
-import CommentSection from '@/components/CommentSection';
+import { getQuestionDetails } from '@/api/question'
 import type { Question } from '@/types'
 import { useUserStore } from '@/store/user'
 
@@ -10,7 +9,6 @@ export default function QuestionDetail() {
   const navigate = useNavigate()
   const location = useLocation()
   const [question, setQuestion] = useState<Question | null>(null)
-  const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
 
   const [displayLikes, setDisplayLikes] = useState(0)
@@ -27,12 +25,8 @@ export default function QuestionDetail() {
     if (!id) return
     const fetchData = async () => {
       try {
-        const [questionRes, commentRes] = await Promise.all([
-          getQuestionDetails(Number(id)),
-          getQuestionComments(Number(id))
-        ])
+        const questionRes = await getQuestionDetails(Number(id))
         setQuestion(questionRes)
-        setComments(commentRes)
         // 初始化本地显示数字
         setDisplayLikes(questionRes.totalLikes || 0)
         setDisplayFavorites(questionRes.totalFavorites || 0)
@@ -160,11 +154,6 @@ export default function QuestionDetail() {
           </div>
           <div className="ml-auto text-gray-400">{question.totalAnswers} 回答</div>
         </div>
-
-        <CommentSection 
-          comments={comments} 
-          total={question.totalAnswers} 
-        />
       </div>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 py-3 z-30">
