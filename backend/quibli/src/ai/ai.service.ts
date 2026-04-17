@@ -1,6 +1,7 @@
 import {
   Injectable,
 } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { Message } from './dto/chat.dto';
 import { PrismaService } from '../prisma/prisma.service'
 import { ChatDeepSeek } from '@langchain/deepseek'
@@ -40,7 +41,30 @@ export class AIService {
     })
   }
 
-  async chat(messages: Message[], onToken: (token: string) => void) {
+  // 使用 RxJS Observable
+  chat(messages: Message[]): Observable<string> {
+    return new Observable<string>((subscriber) => {
+      const langChainMessages = convertToLangChainMessages(messages);
+      
+      // 异步迭代处理 AI 返回的流
+      (async () => {
+        try {
+          const stream = await this.chatModel.stream(langChainMessages);
+          for await (const chunk of stream) {
+            const content = chunk.content as string;
+            if (content) {
+              subscriber.next(content); // 将每个 token 推送到 Observable 流中
+            }
+          }
+          subscriber.complete(); // 数据流结束
+        } catch (error) {
+          subscriber.error(error); // 捕获并推送错误
+        }
+      })();
+    });
+  }
+
+  async chat1(messages: Message[], onToken: (token: string) => void) {
     const langChainMessages = convertToLangChainMessages(messages);
     const stream = await this.chatModel.stream(langChainMessages);
     for await (const chunk of stream) {

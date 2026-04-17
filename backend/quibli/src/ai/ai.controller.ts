@@ -15,22 +15,32 @@ export class AIController {
   constructor(private readonly aiService: AIService) {}
 
   @Post('chat')
-  async chat(
+  chat(
     @Body() chatDto: ChatDto,
     @Res() res: Response,
   ) {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Transfer-Encoding', 'chunked');
+    // 最佳实践：设置 SSE (Server-Sent Events) 必需的响应头
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
-    try {
-      await this.aiService.chat(chatDto.messages, (token) => {
-        res.write(token);
-      });
-      res.end();
-    } catch (error) {
-      console.error(error);
-      res.status(500).end();
-    }
+    // 订阅 AI 服务的 Observable
+    this.aiService.chat(chatDto.messages).subscribe({
+      next: (token) => {
+        // SSE 格式：以 data: 开头，以 \n\n 结尾。为了安全，通常将内容 JSON 序列化
+        res.write(`data: ${JSON.stringify({ token })}\n\n`);
+      },
+      error: (error) => {
+        console.error('Chat stream error:', error);
+        res.write(`event: error\ndata: ${JSON.stringify({ message: 'Internal Server Error' })}\n\n`);
+        res.end(); // 发生错误时结束响应
+      },
+      complete: () => {
+        // 发送结束事件
+        res.write(`event: done\ndata: [DONE]\n\n`);
+        res.end(); // 流结束时关闭连接
+      }
+    });
   }
 
   @Get('avatar')
