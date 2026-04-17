@@ -41,38 +41,31 @@ export class AIService {
     })
   }
 
-  // 使用 RxJS Observable
+  /** 流式聊天：LangChain 异步迭代 → RxJS Observable，供 Controller @Sse 消费 */
   chat(messages: Message[]): Observable<string> {
     return new Observable<string>((subscriber) => {
+      // 1) DTO 消息 → LangChain 消息类型
       const langChainMessages = convertToLangChainMessages(messages);
-      
-      // 异步迭代处理 AI 返回的流
+
       (async () => {
         try {
+          // 2) 向模型发起流式调用，得到 AsyncIterable
           const stream = await this.chatModel.stream(langChainMessages);
+          // 3) 逐块读取；每块若有文本则推给上层（后续被 map 成 SSE data）
           for await (const chunk of stream) {
             const content = chunk.content as string;
             if (content) {
-              subscriber.next(content); // 将每个 token 推送到 Observable 流中
+              subscriber.next(content);
             }
           }
-          subscriber.complete(); // 数据流结束
+          // 4) 模型流结束 → 通知 Observable 完成（Nest 会结束 SSE 响应）
+          subscriber.complete();
         } catch (error) {
-          subscriber.error(error); // 捕获并推送错误
+          // 5) 任意异常 → 推给订阅方（Nest 会按错误结束 SSE）
+          subscriber.error(error);
         }
       })();
     });
-  }
-
-  async chat1(messages: Message[], onToken: (token: string) => void) {
-    const langChainMessages = convertToLangChainMessages(messages);
-    const stream = await this.chatModel.stream(langChainMessages);
-    for await (const chunk of stream) {
-      const content = chunk.content as string;
-      if (content) {
-        onToken(content);
-      }
-    }
   }
 
   // 生成头像

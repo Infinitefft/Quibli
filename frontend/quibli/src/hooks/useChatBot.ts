@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Observable } from 'rxjs';
-import { scan, tap, finalize } from 'rxjs/operators';
+import { Subject, Subscription } from 'rxjs';
+import { switchMap, tap, finalize } from 'rxjs/operators';
+import { fetchChatStream } from '../api/chatApi';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -12,157 +13,100 @@ export function useChatBot() {
   const [isLoading, setIsLoading] = useState(false);
   const chatIdRef = useRef<string>(Math.random().toString(36).substring(7));
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim()) return;
+  // 1) 用户点发送时 next(messages)，驱动下面 pipe
+  const request$ = useRef(new Subject<Message[]>());
+  // 2) 保存订阅：卸载 / 停止生成 时要 unsubscribe
+  const subscriptionRef = useRef<Subscription | null>(null);
+
+  useEffect(() => {
+    subscriptionRef.current = request$.current.pipe(
+      // 3) 每次发起新一轮请求前：loading + 占位一条 assistant
+      tap(() => {
+        setIsLoading(true);
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+      }),
+      // 4) 只保留「最后一次」请求：新 next 会取消上一轮 inner（触发 fetch abort）
+      switchMap((currentMessages) =>
+        // 5) inner 结束 / 报错 / 被取消 都要关 loading（外层 subscribe 的 complete 不会在 Subject 仍存活时因 inner 触发）
+        fetchChatStream(chatIdRef.current, currentMessages).pipe(
+          finalize(() => setIsLoading(false)),
+        ),
+      ),
+    ).subscribe({
+      // 6) 每收到一个 token：拼到最后一条 assistant
+      next: (token) => {
+        setMessages((prev) => {
+          const lastIndex = prev.length - 1;
+          const updated = [...prev];
+          updated[lastIndex] = {
+            ...updated[lastIndex],
+            content: updated[lastIndex].content + token,
+          };
+          return updated;
+        });
+      },
+      // 7) 网络或解析失败（loading 已由 finalize 处理）
+      error: (err) => {
+        console.error('Chat stream error:', err);
+      },
+    });
+
+    return () => {
+      // 8) 组件卸载：取消订阅 → chatApi 里 abort fetch
+      subscriptionRef.current?.unsubscribe();
+    };
+  }, []);
+
+  const sendMessage = useCallback((content: string) => {
+    if (!content.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', content };
-    const currentMessages = [...messages, userMessage];
-    
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
+    const newMessages = [...messages, userMessage];
+    // 1) 先更新列表（用户消息已确定）
+    setMessages(newMessages);
+    // 2) 再推给 Subject → tap → switchMap → fetch SSE
+    request$.current.next(newMessages);
+  }, [messages, isLoading]);
 
-    try {
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-      // 1. 创建 RxJS Observable 来处理 SSE 流式数据
-      // 最佳实践：将副作用（如 fetch 请求）放在 Observable 内部。
-      // 这样做的好处是：只有当有人 subscribe（订阅）这个流时，fetch 请求才会真正发出；
-      // 当有人 unsubscribe（取消订阅）时，我们可以利用 AbortController 自动中止请求。
-      const stream$ = new Observable<string>((subscriber) => {
-        // 创建一个中止控制器，用于在取消订阅时打断 fetch 请求
-        const abortController = new AbortController();
-
-        // 发起 HTTP 请求
-        fetch('http://localhost:3001/api/ai/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            id: chatIdRef.current,
-            messages: currentMessages 
-          }),
-          // 将中止信号绑定到这个请求上
-          signal: abortController.signal
-        }).then(async (response) => {
-          // 检查 HTTP 状态码是否正常
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-
-          // 获取响应体的读取器，用于流式读取数据
-          const reader = response.body?.getReader();
-          // 创建文本解码器，将二进制的 Uint8Array 转换为字符串
-          const decoder = new TextDecoder();
-          // 创建一个缓冲区，用于暂存不完整的数据块
-          let buffer = '';
-
-          // 开启无限循环，不断从流中读取数据
-          while (true) {
-            // value 是读取到的二进制数据块（Uint8Array），done 表示流是否结束
-            const { done, value } = await reader!.read();
-            
-            // 如果后端已经关闭了连接，跳出循环
-            if (done) break;
-
-            // 将二进制数据解码为字符串，{ stream: true } 表示这是一个连续的流，解码器会保留部分状态
-            // 然后将新解码的字符串追加到缓冲区中
-            buffer += decoder.decode(value, { stream: true });
-            
-            // SSE 协议规定，每条消息之间用两个换行符 (\n\n) 分隔
-            // 我们按 \n\n 将缓冲区中的数据切分成多条完整的消息
-            const lines = buffer.split('\n\n');
-            
-            // 关键点：最后一部分可能是不完整的（比如 JSON 字符串被截断了）
-            // 所以我们把数组的最后一项弹出来（pop），重新放回缓冲区中，等待下一次读取拼接
-            buffer = lines.pop() || '';
-
-            // 遍历所有已经完整的消息行
-            for (const line of lines) {
-              // 处理后端发送的自定义结束事件
-              if (line.startsWith('event: done')) {
-                subscriber.complete(); // 通知订阅者流已结束
-                return; // 退出函数
-              }
-              // 处理后端发送的自定义错误事件
-              if (line.startsWith('event: error')) {
-                subscriber.error(new Error('Server reported an error')); // 通知订阅者发生错误
-                return; // 退出函数
-              }
-              // 处理标准的数据事件
-              if (line.startsWith('data: ')) {
-                // 截取 'data: ' 后面的实际内容
-                const dataStr = line.slice(6);
-                
-                // 约定的结束标志
-                if (dataStr === '[DONE]') {
-                  subscriber.complete(); // 通知订阅者流已结束
-                  return; // 退出函数
-                }
-                
-                try {
-                  // 尝试将字符串解析为 JSON 对象
-                  const parsed = JSON.parse(dataStr);
-                  // 如果解析成功且包含 token 字段
-                  if (parsed.token) {
-                    // 将这个 token 推送给订阅者（即触发下面的 next 回调）
-                    subscriber.next(parsed.token); 
-                  }
-                } catch (e) {
-                  // 忽略 JSON 解析错误。
-                  // 虽然我们用了 buffer，但极端情况下仍可能出现解析失败，忽略即可，防止整个流崩溃
-                }
-              }
-            }
-          }
-          // 当 while 循环正常结束（done 为 true）时，通知订阅者流已完成
-          subscriber.complete();
-        }).catch(err => {
-          // 捕获 fetch 过程中的错误
-          if (err.name === 'AbortError') {
-            // 如果是我们主动取消订阅导致的 AbortError，只打印日志，不作为异常抛出
-            console.log('Fetch aborted');
-          } else {
-            // 其他网络错误，通知订阅者
-            subscriber.error(err);
-          }
+  const stopGenerating = useCallback(() => {
+    // 1) 断掉当前 inner，触发 fetch abort
+    subscriptionRef.current?.unsubscribe();
+    // 2) 立刻关 UI loading（finalize 也会跑，双保险）
+    setIsLoading(false);
+    // 3) 重新挂同一套 pipe，否则之后 next 无人监听
+    subscriptionRef.current = request$.current.pipe(
+      tap(() => {
+        setIsLoading(true);
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+      }),
+      switchMap((currentMessages) =>
+        fetchChatStream(chatIdRef.current, currentMessages).pipe(
+          finalize(() => setIsLoading(false)),
+        ),
+      ),
+    ).subscribe({
+      next: (token) => {
+        setMessages((prev) => {
+          const lastIndex = prev.length - 1;
+          const updated = [...prev];
+          updated[lastIndex] = {
+            ...updated[lastIndex],
+            content: updated[lastIndex].content + token,
+          };
+          return updated;
         });
-
-        // 最佳实践：Observable 的清理函数
-        // 当外部调用 subscription.unsubscribe() 时，这个函数会被执行
-        // 此时我们调用 abort()，浏览器会立刻切断底层的 HTTP TCP 连接，节省资源
-        return () => abortController.abort();
-      });
-
-      // 2. 订阅 Observable 并使用操作符处理数据
-      stream$.subscribe({
-        next: (token) => {
-          setMessages(prev => {
-            const lastIndex = prev.length - 1;
-            const updatedMessages = [...prev];
-            updatedMessages[lastIndex] = {
-              ...updatedMessages[lastIndex],
-              content: updatedMessages[lastIndex].content + token
-            };
-            return updatedMessages;
-          });
-        },
-        error: (err) => {
-          console.error('Chat stream error:', err);
-          setIsLoading(false); // 发生错误时结束加载状态
-        },
-        complete: () => {
-          setIsLoading(false); // 流结束时结束加载状态
-        }
-      });
-    } catch (error) {
-      console.error('Chat error:', error);
-      setIsLoading(false);
-    }
-  }, [messages]);
+      },
+      error: (err) => {
+        console.error('Chat stream error:', err);
+      },
+    });
+  }, []);
 
   return {
     messages,
-    setMessages, // 补全导出，解决 Chat.tsx 报错
+    setMessages,
     sendMessage,
+    stopGenerating,
     isLoading,
   };
 }

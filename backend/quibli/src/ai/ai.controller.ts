@@ -2,11 +2,13 @@ import {
   Controller,
   Post,
   Body,
-  Res,
   Get,
   Query,
+  Sse,
+  MessageEvent,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ChatDto } from './dto/chat.dto';
 import { AIService } from './ai.service';
 
@@ -14,33 +16,21 @@ import { AIService } from './ai.service';
 export class AIController {
   constructor(private readonly aiService: AIService) {}
 
+  // SSE 聊天：客户端 POST JSON，响应为 text/event-stream（由 @Sse 自动写头、收尾）
   @Post('chat')
-  chat(
-    @Body() chatDto: ChatDto,
-    @Res() res: Response,
-  ) {
-    // 最佳实践：设置 SSE (Server-Sent Events) 必需的响应头
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    // 订阅 AI 服务的 Observable
-    this.aiService.chat(chatDto.messages).subscribe({
-      next: (token) => {
-        // SSE 格式：以 data: 开头，以 \n\n 结尾。为了安全，通常将内容 JSON 序列化
-        res.write(`data: ${JSON.stringify({ token })}\n\n`);
-      },
-      error: (error) => {
-        console.error('Chat stream error:', error);
-        res.write(`event: error\ndata: ${JSON.stringify({ message: 'Internal Server Error' })}\n\n`);
-        res.end(); // 发生错误时结束响应
-      },
-      complete: () => {
-        // 发送结束事件
-        res.write(`event: done\ndata: [DONE]\n\n`);
-        res.end(); // 流结束时关闭连接
-      }
-    });
+  @Sse()
+  chat(@Body() chatDto: ChatDto): Observable<MessageEvent> {
+    // 1) 从 DTO 取 messages，交给 Service 得到「字符串 token 流」
+    return this.aiService.chat(chatDto.messages).pipe(
+      // 2) 每个 token 包成 MessageEvent；Nest 会写成 SSE 的 data: 行
+      // 3) 前端按行读 body，JSON.parse(data) 后取 .token
+      map(
+        (token) =>
+          ({
+            data: { token },
+          }) as MessageEvent,
+      ),
+    );
   }
 
   @Get('avatar')
