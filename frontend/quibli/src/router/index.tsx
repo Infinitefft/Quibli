@@ -8,15 +8,17 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
 } from 'react-router-dom';
 
 
 
-import { AliveScope } from 'react-activation';  // 要缓存的范围
+import { AliveScope } from 'react-activation';
 import MainLayout from '@/layouts/MainLayout';
 
-
-const Home = lazy(() => import('@/components/KeepAliveHome'));   // 拿到缓存的首页
+const HomeFeedLayout = lazy(() => import('@/pages/home/HomeFeedLayout'));
+const HomePostsPanel = lazy(() => import('@/pages/home/HomePostsPanel'));
+const HomeQuestionsPanel = lazy(() => import('@/pages/home/HomeQuestionsPanel'));
 const Mine = lazy(() => import('@/pages/Mine'));
 const Login = lazy(() => import('@/pages/Login'));
 const Chat = lazy(() => import('@/pages/Chat'));
@@ -76,18 +78,35 @@ export default function RouterConfig({children} : {children: React.ReactNode}) {
 
 
             <Route path="/" element={<MainLayout />}>
-              {/*
-                首页单独内层 Suspense：懒加载 chunk 时不走外层 fallback={<Loading />}，
-                由首页自己的骨架屏等承担首屏（fallback={null} 避免全屏 Loading）。
-              */}
+              {/* 来到路径 / 下强行转到/feed/posts 下   to="/feed/posts" */}
+              <Route index element={<Navigate to="/feed/posts" replace />} />  
               <Route
-                index
+                path="feed"
                 element={
                   <Suspense fallback={null}>
-                    <Home />
+                    <HomeFeedLayout />
                   </Suspense>
                 }
-              />
+              >
+                {/* 来到路径 /feed 强行转到 /feed/posts 下 */}
+                <Route index element={<Navigate to="posts" replace />} />
+                <Route
+                  path="posts"
+                  element={
+                    <Suspense fallback={null}>
+                      <HomePostsPanel />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="questions"
+                  element={
+                    <Suspense fallback={null}>
+                      <HomeQuestionsPanel />
+                    </Suspense>
+                  }
+                />
+              </Route>
               <Route path="chat" element={<Chat />} />
               <Route path="publish" element={<Publish />} />
               <Route path="following" element={<Following />} />

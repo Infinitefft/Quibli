@@ -3,19 +3,12 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import InfiniteScroll from '@/components/InfiniteScroll';
 
 /**
- * 首页 Feed：对 @tanstack/react-virtual 的 `useVirtualizer` 封装（与手写 VirtualList 无关）。
- *
- * 库的用法说明、API 摘要、最小 Demo 见：`VirtualList.example.tsx`（`pnpm add @tanstack/react-virtual`）。
- *
- * 结构要点：
- * - 滚动根：ref={scrollRef}，固定 height + overflow:auto；
- * - 总高：virtualizer.getTotalSize()；
- * - 可见行：getVirtualItems()，absolute + translateY(start)；
- * - estimateSize 与真实卡片高度需一致，否则空白或裁切（见 ESTIMATE_*）。
+ * 首页 Feed 虚拟列表封装：把 @tanstack/react-virtual 的 `useVirtualizer` 接到固定高度的滚动容器上。
+ * 更细的「为什么这样写」见函数体里的分步注释；库级 Demo 可参考项目里的 `VirtualList.example.tsx`。
  */
-/** 与 PostsItem 卡片+间距大致匹配（px） */
+/** 预估行高（px）：尽量接近 PostsItem 真实高度，虚拟列表才能对齐、少闪烁 */
 export const ESTIMATE_POST_ROW = 280;
-/** 与 QuestionsItem 大致匹配（px） */
+/** 预估行高（px）：尽量接近 QuestionsItem 真实高度 */
 export const ESTIMATE_QUESTION_ROW = 200;
 
 type HomeTanStackListProps<T> = {
@@ -32,7 +25,7 @@ type HomeTanStackListProps<T> = {
   scrollClassName?: string;
 };
 
-/** 首页 Feed：TanStack 虚拟行 + 底部 InfiniteScroll 哨兵（加载更多） */
+/** 首页 Feed：TanStack 虚拟行 + InfiniteScroll（列表底部哨兵触发加载更多） */
 export function HomeTanStackList<T>({
   scrollRef,
   items,
@@ -45,32 +38,53 @@ export function HomeTanStackList<T>({
   renderItem,
   scrollClassName = '',
 }: HomeTanStackListProps<T>) {
+  // 步骤 1：创建虚拟化器 —— 它只负责「算哪些行该画、每行 top/height」
   const virtualizer = useVirtualizer({
+    // 1.1 数据条数：变长列表随 items.length 变化，虚拟器会重算总高度与可见窗口
     count: items.length,
-    // 必须与 scrollRef 指向同一 DOM，库才能订阅 scroll/resize 并计算可见区间
+    // 1.2 告诉库「谁在滚动」：必须和下面外层 div 的 ref={scrollRef} 是同一个节点
+    //     否则库读不到 scrollTop，getVirtualItems() 会一直认为在顶部
     getScrollElement: () => scrollRef.current,
+    // 1.3 每行预估高度：首屏与未测量行用这个值占位；和真实 DOM 差太多会出现大块空白或重叠
     estimateSize: () => estimateSize,
-    // 视口外多画几行，快速滑动时不易露底
+    // 1.4 overscan：在可视区域上下多渲染几行，快速滑动时减少「白屏一闪」
     overscan: 8,
   });
 
   return (
+    // 步骤 2：滚动根容器 —— 固定 height + overflow:auto，形成独立滚动上下文
     <div
       ref={scrollRef}
       className={scrollClassName}
       style={{ height, overflowY: 'auto' }}
+      // 2.1 把滚动事件交给父级（首页壳）做顶栏隐藏/搜索条渐隐等
       onScroll={onScroll}
     >
-      {/* 哨兵在内容块之后，随滚动进入视口触发 onLoadMore；总高度需包含虚拟列表占位 */}
+      {/*
+        步骤 3：InfiniteScroll 包在「可滚动内容」外侧
+        3.1 内部会在列表末尾放哨兵（IntersectionObserver），滚到底附近触发 onLoadMore
+        3.2 注意：总可滚动高度 = 内层占位 div 的 height（见下一步），哨兵随内容变长才能反复触发
+      */}
       <InfiniteScroll hasMore={hasMore} isLoading={isLoading} onLoadMore={onLoadMore}>
+        {/*
+          步骤 4：撑开滚动条高度的「轨道」
+          4.1 height = getTotalSize()：用「预估/已测量」的行高之和模拟完整列表高度
+          4.2 relative：子行用 absolute 贴在这条轨道上；pb-4 与真实列表留白一致
+        */}
         <div
           className="pb-4 bg-gray-50 relative w-full"
           style={{
             height: virtualizer.getTotalSize(),
           }}
         >
+          {/*
+            步骤 5：只渲染当前视口附近的行（+ overscan）
+            5.1 v.index：逻辑下标；v.start / v.size：这一行在「总列表」里的像素偏移与高度
+            5.2 用 absolute + translateY(v.start) 把该行摆到正确纵向位置（虚拟列表经典写法）
+          */}
           {virtualizer.getVirtualItems().map((v) => {
             const item = items[v.index];
+            // 5.3 若数据尚未同步到该下标，跳过避免渲染 undefined
             if (item == null) return null;
             return (
               <div
@@ -81,11 +95,16 @@ export function HomeTanStackList<T>({
                   top: 0,
                   left: 0,
                   width: '100%',
+                  // 高度用 v.size：库在动态测量后可能调整，比写死 estimate 更准
                   height: v.size,
                   transform: `translateY(${v.start}px)`,
                 }}
               >
-                {/* 卡片组件自带 margin-bottom，用选择器去掉避免虚拟行高度与 estimate 不一致 */}
+                {/*
+                  步骤 6：抹平卡片自带下边距
+                  6.1 许多 Item 组件内部有 mb-*，若保留则「真实占位 > estimate」会破坏虚拟行对齐
+                  6.2 [&>*]:!mb-0 强制子根元素 margin-bottom 为 0，让行高更接近 estimateSize
+                */}
                 <div className="[&>*]:!mb-0">{renderItem(item, v.index)}</div>
               </div>
             );

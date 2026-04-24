@@ -95,7 +95,7 @@ export default function Mine() {
   };
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex flex-col relative overflow-hidden font-sans overscroll-none">
+    <div className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex flex-col relative overflow-hidden font-sans">
       
       {/* 1. 顶部区域 */}
       <div className="pt-14 pb-6 px-6 relative z-10 shrink-0">
@@ -177,7 +177,7 @@ export default function Mine() {
       </div>
 
       {/* 2. 主体区域 */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-5 overscroll-contain touch-pan-y">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-5">
         <div className="py-2">   
           <MenuRow 
             icon={FileText} 

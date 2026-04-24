@@ -14,6 +14,12 @@ interface SearchSuggestionsState {
 }
 
 
+
+// 模块作用域变量，记录当前请求的请求ID
+// 用于解决竞态问题
+let currentSearchRequsetId = 0;
+
+
 export const useSearchSuggestionsStore = create<SearchSuggestionsState>()(
   persist((set, get) => ({
     loading: false,
@@ -25,11 +31,18 @@ export const useSearchSuggestionsStore = create<SearchSuggestionsState>()(
         return 
       }
 
+
+      // 每次调用时递增ID，并且闭包在当前函数中
+      const requestId = ++currentSearchRequsetId;
+
       set({ loading: true });
 
       try {
         // url 传输是 ASCII 编码，那么需要对 keyword 进行编码
         const res = await getSearchSuggestions(encodeURIComponent(keyword));
+        if (requestId !== currentSearchRequsetId) {
+          return;
+        }
         const data: string[] = res || [];
         set({ suggestions: data})
         // get().addHistory(keyword.trim());

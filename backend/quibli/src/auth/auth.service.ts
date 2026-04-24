@@ -90,7 +90,7 @@ export class AuthService {
   private async generateTokens(userId: string, phone: string) {
     const payload = {
       sub: userId,   // sub：用来唯一标识 token 所代表的主体，刚好可以用 userID
-      name: phone    // name：自定义字段，可以随便放你想让 token 携带的信息 
+      name: phone    // name：自定义字段，可以随便放你想让 token 携带的信息
     };
 
     const [at, rt] = await Promise.all([

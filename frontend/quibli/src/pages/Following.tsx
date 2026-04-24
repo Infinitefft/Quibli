@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useLayoutEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import InfiniteScroll from '@/components/InfiniteScroll';
-import { PullToRefresh } from '@/components/PullToRefresh';
 import PostsItem from '@/components/post/PostsItem';
 import QuestionsItem from '@/components/question/QuestionsItem';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -99,22 +98,6 @@ export default function Following() {
     if (cache.posts.length === 0) loadMorePosts();
     if (cache.questions.length === 0) loadMoreQuestions();
   }, [fetchFollowedUsers, loadMorePosts, loadMoreQuestions]);
-
-  const handleRefresh = async () => {
-    if (activeTab === 'posts') {
-      cache.postsPage = 1;
-      cache.hasMorePosts = true;
-      cache.posts = [];
-      setPosts([]);
-      await loadMorePosts();
-    } else {
-      cache.questionsPage = 1;
-      cache.hasMoreQuestions = true;
-      cache.questions = [];
-      setQuestions([]);
-      await loadMoreQuestions();
-    }
-  };
 
   useLayoutEffect(() => {
     if (activeTab === 'posts' && postsContainerRef.current) {
@@ -220,18 +203,16 @@ export default function Following() {
             className="w-screen h-full overflow-y-auto no-scrollbar pb-24" 
             onScroll={(e) => handleScroll(e, 'posts')}
           >
-            <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={postsContainerRef}>
-              <InfiniteScroll onLoadMore={loadMorePosts} hasMore={cache.hasMorePosts} isLoading={loadingPosts}>
-                <div className="pt-2">
-                  {posts.map((post) => (
-                    <PostsItem key={`post-${post.id}`} post={post} onClick={() => handleItemClick(post.id, 'posts')} />
-                  ))}
-                  {!loadingPosts && posts.length === 0 && cache.usersFetched && (
-                    <div className="py-20 text-center text-sm text-gray-400">暂无关注动态</div>
-                  )}
-                </div>
-              </InfiniteScroll>
-            </PullToRefresh>
+            <InfiniteScroll onLoadMore={loadMorePosts} hasMore={cache.hasMorePosts} isLoading={loadingPosts}>
+              <div className="pt-2">
+                {posts.map((post) => (
+                  <PostsItem key={`post-${post.id}`} post={post} onClick={() => handleItemClick(post.id, 'posts')} />
+                ))}
+                {!loadingPosts && posts.length === 0 && cache.usersFetched && (
+                  <div className="py-20 text-center text-sm text-gray-400">暂无关注动态</div>
+                )}
+              </div>
+            </InfiniteScroll>
           </div>
           
           <div 
@@ -239,18 +220,16 @@ export default function Following() {
             className="w-screen h-full overflow-y-auto no-scrollbar pb-24" 
             onScroll={(e) => handleScroll(e, 'questions')}
           >
-            <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={questionsContainerRef}>
-              <InfiniteScroll onLoadMore={loadMoreQuestions} hasMore={cache.hasMoreQuestions} isLoading={loadingQuestions}>
-                <div className="pt-2">
-                  {questions.map((q) => (
-                    <QuestionsItem key={`q-${q.id}`} question={q} onClick={() => handleItemClick(q.id, 'questions')} />
-                  ))}
-                  {!loadingQuestions && questions.length === 0 && cache.usersFetched && (
-                    <div className="py-20 text-center text-sm text-gray-400">暂无关注动态</div>
-                  )}
-                </div>
-              </InfiniteScroll>
-            </PullToRefresh>
+            <InfiniteScroll onLoadMore={loadMoreQuestions} hasMore={cache.hasMoreQuestions} isLoading={loadingQuestions}>
+              <div className="pt-2">
+                {questions.map((q) => (
+                  <QuestionsItem key={`q-${q.id}`} question={q} onClick={() => handleItemClick(q.id, 'questions')} />
+                ))}
+                {!loadingQuestions && questions.length === 0 && cache.usersFetched && (
+                  <div className="py-20 text-center text-sm text-gray-400">暂无关注动态</div>
+                )}
+              </div>
+            </InfiniteScroll>
           </div>
         </div>
         <BackToTop 

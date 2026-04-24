@@ -123,7 +123,7 @@ export default function BottomNav() {
   const { isLogin } = useUserStore((state) => state);
 
   const tabs = [
-    { label: '首页', path: "/", Icon: HomeIcon },
+    { label: '首页', path: '/feed/posts', Icon: HomeIcon },
     { label: 'Qlib', path: "/chat", Icon: ChatIcon },
     { label: '发布', path: "/publish", Icon: PublishIcon },
     { label: '关注', path: "/following", Icon: FollowingIcon },
@@ -147,7 +147,10 @@ export default function BottomNav() {
     >
       {tabs.map((tab) => {
         const IconComponent = tab.Icon;
-        const isActive = pathname === tab.path;
+        const isActive =
+          tab.path === '/feed/posts'
+            ? pathname === '/' || pathname.startsWith('/feed')
+            : pathname === tab.path;
         
         // Special render for Publish button:
         // - Blue background (bg-blue-600)

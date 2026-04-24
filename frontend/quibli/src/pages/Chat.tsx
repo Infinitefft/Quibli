@@ -101,7 +101,7 @@ export default function Chat() {
             flex-1 relative pt-28 pb-36 no-scrollbar
             ${messages.length === 0 
               ? 'overflow-hidden touch-none overscroll-none' 
-              : 'overflow-y-auto overscroll-y-contain'
+              : 'overflow-y-auto'
             }
           `}
           style={{ background: 'linear-gradient(to bottom, #f8fafc, #eff6ff)' }}

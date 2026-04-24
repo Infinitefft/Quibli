@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import InfiniteScroll from '@/components/InfiniteScroll';
-import { PullToRefresh } from '@/components/PullToRefresh';
 import PostsItem from '@/components/post/PostsItem';
 import { getUserPosts } from '@/api/user';
 
@@ -43,15 +42,6 @@ export default function UserPostsInfomations({ userId: propUserId }: { userId?: 
     }
   };
 
-  const handleRefresh = async () => {
-    if (!userId) return;
-    cache.page = 1;
-    cache.hasMore = true;
-    cache.items = [];
-    setItems([]);
-    await loadMore();
-  };
-
   useLayoutEffect(() => {
     if (containerRef.current && cache.scrollY > 0) {
       containerRef.current.scrollTop = cache.scrollY;
@@ -70,19 +60,17 @@ export default function UserPostsInfomations({ userId: propUserId }: { userId?: 
       className="h-full overflow-y-auto no-scrollbar"
       onScroll={(e) => { cache.scrollY = e.currentTarget.scrollTop; }}
     >
-      <PullToRefresh onRefresh={handleRefresh} scrollableElementRef={containerRef}>
-        <InfiniteScroll onLoadMore={loadMore} hasMore={cache.hasMore} isLoading={loading}>
-          <div className="pb-4">
-            {items.map((post, index) => (
-              <PostsItem 
-                key={`${post.id}-${index}`} 
-                post={post} 
-                onClick={() => navigate(`/posts/${post.id}`, { state: { fromUrl: location.pathname } })} 
-              />
-            ))}
-          </div>
-        </InfiniteScroll>
-      </PullToRefresh>
+      <InfiniteScroll onLoadMore={loadMore} hasMore={cache.hasMore} isLoading={loading}>
+        <div className="pb-4">
+          {items.map((post, index) => (
+            <PostsItem 
+              key={`${post.id}-${index}`} 
+              post={post} 
+              onClick={() => navigate(`/posts/${post.id}`, { state: { fromUrl: location.pathname } })} 
+            />
+          ))}
+        </div>
+      </InfiniteScroll>
     </div>
   );
 }
