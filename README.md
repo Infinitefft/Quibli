@@ -225,6 +225,21 @@ export class UsersService {
 - refreshToken 和 accessToken 双 token 机制
 - 前端 config.ts 根据后端返回的响应，如果响应失败则判断是否是 token 过期，如果是则刷新 token 并将失败的请求放进请求队列中，token 刷新后重新发送请求，否则返回错误信息。
 
+axios 请求，get请求接收两个参数，post接收三个参数
+
+axios.get(url, config): 只有 2 个参数。
+axios.post(url, data, config): 有 3 个参数。
+
+
+config 配置对象：
+Axios 会根据字段名决定它的去向：
+| 字段名 | 是否发给后端 | 说明 |
+| --- | --- | --- |
+| params |  会 | 最终变成 URL 后面的 ?key=value。|
+| headers | 会 | 变成 HTTP 请求头（后端从 Header 获取）。|
+| signal | 不会 | 内部控制开关，只存在于浏览器内存中。|
+| timeout | 不会 | Axios 内部计时器，时间到了自动断开请求。adapter不会决定是用浏览器 XHR 还是 Node.js http 模块发送请求。|
+
 ``` ts
 import axios from 'axios';
 import { useUserStore } from '@/store/user';
@@ -802,3 +817,32 @@ export default InfiniteScroll;
 > 非虚拟列表下，页面性能随数据量呈线性衰减：由于 DOM 节点随滚动不断堆积，导致浏览器在执行样式计算（Recalculate Style）和布局（Layout）时耗时指数级增长，最终在触发路由跳转或长列表滚动时，因主线程被秒级长任务（Long Task）阻塞而产生严重掉帧和交互假死
 
 可以参考性能图片：[没有虚拟列表前的性能](img\BeforeVisulList.png)
+
+
+
+
+### 解决搜索请求竞态问题
+
+通过 api 层和 store 层进行配置 config 来解决
+
+`signal` 是什么？
+signal 是 `AbortController` 实例上的一个**属性**（类型是 AbortSignal）。 你可以把它理解为一根**引爆线**。
+你把这根“引爆线” (signal) 传给 Axios。
+Axios 内部会一直盯着这根线。
+当你在外面调用 currentAbortController.abort() 时，就相当于按下了起爆器。
+Axios 看到引爆线被触发，就会立刻在底层（XMLHttpRequest 或 Fetch API 层面）切断网络连接，并抛出一个 `CanceledError` 。
+
+
+`signal` 是闭包在每个请求里的吗？
+是的，这是最精妙的地方！
+``` js
+currentAbortController = new AbortController();
+const signal = currentAbortController.signal; // 这一步形成了闭包
+```
+当输入 "a" 时，产生了一个局部的 signal_A。这个 signal_A 被传给了第一个 Axios 请求，并且在它的 finally 块里被引用。
+
+当输入 "ab" 时，全局的 currentAbortController 被替换成了新的，产生了一个局部的 signal_B。
+此时，"a" 的请求被 abort 抛出异常，进入了 "a" 请求自己的 catch 和 finally。
+
+在 "a" 请求的 finally 里，它检查的是自己闭包里的 signal_A。因为 signal_A 已经被 abort 了（signal_A.aborted === true），所以它不会执行 set({ loading: false })。
+这就完美避免了旧请求的结束导致新请求的 loading 圈提前消失。
