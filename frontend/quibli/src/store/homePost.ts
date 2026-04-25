@@ -6,10 +6,15 @@ import { fetchPosts } from '@/api/post';
 interface HomePostState {
   posts: Post[];
   loadMorePosts: () => Promise<void>;
+  prefetchPosts: () => void;
   loadingPosts: boolean;
   hasMorePosts: boolean;
   postPage: number;
 }
+
+
+let prefetchPromiseArr: Promise<{ postItems: Post[] }> | null = null;
+let prefetchedPage: number | null = null;
 
 
 
@@ -18,11 +23,31 @@ export const useHomePostStore = create<HomePostState>((set, get) => ({
   hasMorePosts: true,
   loadingPosts: false,
   posts: [],
+  prefetchPosts: () => {
+    const { loadingPosts, hasMorePosts, postPage } = get();
+    if (loadingPosts || !hasMorePosts) return;   // 正在加载或没有了
+    if (prefetchedPage === postPage) return;  // 防止重复
+    // console.log(`第${postPage}页`);
+    prefetchPromiseArr = fetchPosts(postPage);
+    prefetchedPage = postPage;
+  },
   loadMorePosts: async () => {
     if (get().loadingPosts || !get().hasMorePosts) return;
     set({loadingPosts: true});
     try {
-      const { postItems } = await fetchPosts(get().postPage);
+      const targetPage = get().postPage;
+      let res;
+      if (prefetchPromiseArr && prefetchedPage === targetPage) {
+        res = await prefetchPromiseArr;  // 预请求的
+        // console.log('prefetchPromiseArr:', res)
+      } else {
+        res = await fetchPosts(targetPage);
+      }
+      // 用完清空
+      prefetchPromiseArr = null;
+      prefetchedPage = null;
+
+      const { postItems } = res;
       if (postItems.length === 0) {   // 没有更多了
         set({hasMorePosts: false});
         return;

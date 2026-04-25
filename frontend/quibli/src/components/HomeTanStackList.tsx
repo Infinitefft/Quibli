@@ -21,6 +21,7 @@ type HomeTanStackListProps<T> = {
   hasMore: boolean;
   isLoading: boolean;
   onLoadMore: () => void;
+  onPrefetch?: () => void;
   renderItem: (item: T, index: number) => React.ReactNode;
   scrollClassName?: string;
 };
@@ -35,6 +36,7 @@ export function HomeTanStackList<T>({
   hasMore,
   isLoading,
   onLoadMore,
+  onPrefetch,
   renderItem,
   scrollClassName = '',
 }: HomeTanStackListProps<T>) {
@@ -65,7 +67,7 @@ export function HomeTanStackList<T>({
         3.1 内部会在列表末尾放哨兵（IntersectionObserver），滚到底附近触发 onLoadMore
         3.2 注意：总可滚动高度 = 内层占位 div 的 height（见下一步），哨兵随内容变长才能反复触发
       */}
-      <InfiniteScroll hasMore={hasMore} isLoading={isLoading} onLoadMore={onLoadMore}>
+      <InfiniteScroll hasMore={hasMore} isLoading={isLoading} onLoadMore={onLoadMore} onPrefetch={onPrefetch}>
         {/*
           步骤 4：撑开滚动条高度的「轨道」
           4.1 height = getTotalSize()：用「预估/已测量」的行高之和模拟完整列表高度

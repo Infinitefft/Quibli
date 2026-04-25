@@ -4,6 +4,7 @@ interface InfiniteScrollProps {
   hasMore: boolean;   // 是否还有更多数据
   isLoading: boolean;  // 是否正在加载数据
   onLoadMore: () => void;   // 加载更多数据
+  onPrefetch?: () => void;   // 预请求（可选）
   children: React.ReactNode;  // InfiniteScroll 通用的滚动功能，滚动过的具体内容 接受自定义
 }
 
@@ -11,6 +12,7 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   hasMore,
   onLoadMore,
   isLoading = false,
+  onPrefetch,
   children,
 }) => {
   
@@ -23,6 +25,7 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   const hasMoreRef = useRef(hasMore);
   const isLoadingRef = useRef(isLoading);
   const onLoadMoreRef = useRef(onLoadMore);
+  const onPrefetchRef = useRef(onPrefetch);
 
   // 每次渲染时同步更新 ref 的值
   // 无依赖项的 useEffect 会在每次渲染后执行useEffect 
@@ -33,7 +36,29 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
     hasMoreRef.current = hasMore;
     isLoadingRef.current = isLoading;
     onLoadMoreRef.current = onLoadMore;
+    onPrefetchRef.current = onPrefetch;
   });
+
+
+  useEffect(() => {
+    let idleHandle: number;
+    
+    // 不在加载中并且还有数据，并且传入了 prefetch 函数
+    if (!isLoading && hasMore && onPrefetchRef.current) {
+      idleHandle = requestIdleCallback(() => {
+        // 浏览器主线程空闲时，执行
+        if (onPrefetchRef.current) {
+          onPrefetchRef.current();
+        }
+      })
+    }
+
+    return () => {
+      if (idleHandle) {
+        cancelIdleCallback(idleHandle);
+      }
+    }
+  })
 
   useEffect(() => {
 

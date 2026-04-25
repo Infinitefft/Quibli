@@ -13,7 +13,7 @@ export default function HomePostsPanel() {
   // 从 HomeFeedLayout 注入：列表高度、滚动驱动顶栏、切换时同步滚动基准
   const { listViewportHeight, handleScroll, syncScrollOrigin } =
     useOutletContext<HomeFeedOutletContext>();
-  const { loadingPosts, loadMorePosts, posts, hasMorePosts } = useHomePostStore();
+  const { loadingPosts, loadMorePosts, posts, hasMorePosts, prefetchPosts } = useHomePostStore();
   // 骨架与虚拟列表共用同一个滚动容器 ref，BackToTop 才能始终滚同一个节点
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +55,7 @@ export default function HomePostsPanel() {
           hasMore={hasMorePosts}
           isLoading={loadingPosts}
           onLoadMore={loadMorePosts}
+          onPrefetch={prefetchPosts}
           renderItem={(post) => <PostsItem post={post} />}
           scrollClassName="no-scrollbar transform-gpu w-full min-h-0"
         />
