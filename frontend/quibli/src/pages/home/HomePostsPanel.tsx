@@ -3,7 +3,7 @@ import { useLocation, useOutletContext } from 'react-router-dom';
 import PostsItem from '@/components/post/PostsItem';
 import useHomePostStore from '@/store/homePost';
 import BackToTop from '@/components/BackToTop';
-import { HomeTanStackList, ESTIMATE_POST_ROW } from '@/components/HomeTanStackList';
+import { HomeVirtuosoList, ESTIMATE_POST_ROW } from '@/components/HomeVirtuosoList';
 import { HomeFeedSkeleton } from '@/components/HomeFeedSkeleton';
 import type { HomeFeedOutletContext } from '@/pages/home/homeFeedOutletContext';
 
@@ -45,8 +45,8 @@ export default function HomePostsPanel() {
           <HomeFeedSkeleton variant="posts" />
         </div>
       ) : (
-        // 分支 B：有数据 —— 交给 HomeTanStackList：内部同一 scrollRef + 虚拟行 + InfiniteScroll
-        <HomeTanStackList
+        // 分支 B：有数据 —— 交给 HomeVirtuosoList：内部同一 scrollRef + 虚拟行 + InfiniteScroll
+        <HomeVirtuosoList
           scrollRef={scrollRef}
           items={posts}
           estimateSize={ESTIMATE_POST_ROW}

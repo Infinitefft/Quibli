@@ -3,7 +3,7 @@ import { useLocation, useOutletContext } from 'react-router-dom';
 import useHomeQuestionStore from '@/store/homeQuestion';
 import QuestionsItem from '@/components/question/QuestionsItem';
 import BackToTop from '@/components/BackToTop';
-import { HomeTanStackList, ESTIMATE_QUESTION_ROW } from '@/components/HomeTanStackList';
+import { HomeVirtuosoList, ESTIMATE_QUESTION_ROW } from '@/components/HomeVirtuosoList';
 import { HomeFeedSkeleton } from '@/components/HomeFeedSkeleton';
 import type { HomeFeedOutletContext } from '@/pages/home/homeFeedOutletContext';
 
@@ -44,7 +44,7 @@ export default function HomeQuestionsPanel() {
         </div>
       ) : (
         // 虚拟列表：estimate 用问答行高常量；底部仍由 InfiniteScroll 触发分页
-        <HomeTanStackList
+        <HomeVirtuosoList
           scrollRef={scrollRef}
           items={questions}
           estimateSize={ESTIMATE_QUESTION_ROW}
